@@ -374,14 +374,16 @@ to{background-position:100% 100%,0 0}}
 .endb{height:46px;padding:0 20px;background:var(--amber);color:#1a1004}
 .hz{position:relative;height:var(--hzh,128px);flex:none}
 .layer{position:absolute;inset:0;pointer-events:none;z-index:10}
-#battle.wide .bwrap{display:grid;grid-template-columns:minmax(0,1fr) 250px;grid-template-rows:auto 1fr auto auto;column-gap:16px;row-gap:8px}
-#battle.wide .bbar{grid-column:1/-1}
-#battle.wide .board{grid-column:1;grid-row:2/4;align-self:center}
-#battle.wide .info{grid-column:2;grid-row:2;align-self:center}
-#battle.wide .ctl{grid-column:2;grid-row:3;flex-direction:column;align-items:stretch;gap:10px}
-#battle.wide .ctl .orb{align-self:center}
-#battle.wide .ctl .decks{text-align:center}
-#battle.wide .hz{grid-column:1/-1;grid-row:4}
+#battle.wide .bwrap{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-rows:auto 1fr auto auto;column-gap:12px;row-gap:8px;align-items:center}
+#battle.wide .bbar,#battle.wide .board,#battle.wide .hz{grid-column:1/-1}
+#battle.wide .board{grid-row:2;align-self:center;justify-self:center}
+#battle.wide .ctl .decks{white-space:nowrap}
+#battle.wide .ctl{display:contents}
+#battle.wide .ctl .orb{grid-column:1;grid-row:3}
+#battle.wide .ctl .decks{grid-column:2;grid-row:3}
+#battle.wide .info{grid-column:3;grid-row:3;justify-content:center;text-align:center}
+#battle.wide .ctl .endb{grid-column:4;grid-row:3}
+#battle.wide .hz{grid-row:4}
 .tc{position:absolute;left:0;top:0;width:var(--hw);transform-origin:0 0;transition:transform .55s var(--ease),opacity .35s,filter .3s;pointer-events:auto;touch-action:none;will-change:transform;cursor:grab}
 .tc .tci{position:relative;transform-style:preserve-3d;transition:transform .6s var(--ease)}
 .tc .tci.down,.pc .tci.down{transform:rotateY(180deg)}
@@ -397,6 +399,12 @@ to{background-position:100% 100%,0 0}}
 .tc.hit .tci{animation:hit .45s}
 @keyframes hit{20%{transform:translateX(-6%) rotate(-4deg)}50%{transform:translateX(6%) rotate(3deg)}80%{transform:translateX(-3%)}}
 .tc.glow .card{box-shadow:0 0 0 3px var(--amber),0 0 30px rgba(255,181,71,.65)}
+.fxorb{position:absolute;left:-10px;top:-10px;width:20px;height:20px;border-radius:50%;pointer-events:none;z-index:70;--c:#ff5b6b;background:radial-gradient(circle,#fff 0 22%,var(--c) 48%,transparent 72%);box-shadow:0 0 16px 6px var(--c);will-change:transform}
+.fxorb.good{--c:#ffc94a}.fxorb.drain{--c:#b47bff}.fxorb.copy{--c:#5fd0ff}
+.tc.struck .card{animation:struck .6s}
+@keyframes struck{0%{filter:none}18%{filter:brightness(2.4) saturate(.2)}40%{transform:translateX(-5%) rotate(-5deg)}60%{transform:translateX(4%) rotate(3deg)}100%{filter:none}}
+.tc.buffed .card{animation:buffed .6s}
+@keyframes buffed{30%{box-shadow:0 0 0 3px #ffc94a,0 0 26px rgba(255,201,74,.8);transform:scale(1.05)}}
 .float{position:absolute;top:-12px;right:-8px;z-index:20;font-weight:800;font-size:16px;pointer-events:none;animation:floatUp 1.2s var(--ease) forwards;text-shadow:0 2px 6px rgba(0,0,0,.8)}
 .float.up{color:var(--mint)}.float.down{color:var(--coral)}
 @keyframes floatUp{0%{opacity:0;transform:translateY(8px) scale(.6)}20%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-26px)}}
@@ -2357,7 +2365,7 @@ const roomFor=(st,li,side)=>alive(st.lanes[li][side]).length<slotsOf(st,li);
 const canMoveFrom=(st,li)=>!LOCS[st.lanes[li].loc].frozen;
 function canDie(st,li,side,t){ const L=st.lanes[li]; if(has(D(t),'ARMOR')||LOCS[L.loc].frozen) return false; return !alive(L[side]).some(x=>x.u!==t.u&&has(D(x),'GUARD')); }
 function laneOf(st,side,u){ return st.lanes.findIndex(L=>L[side].some(x=>x.u===u&&!x.dead)); }
-function moveCard(st,side,c,from,to){ const L=st.lanes[from]; L[side]=L[side].filter(x=>x.u!==c.u); st.lanes[to][side].push(c); if(LOCS[st.lanes[to].loc].flyway) c.buff+=2; return to; }
+function moveCard(st,side,c,from,to){ c.sk=undefined; const L=st.lanes[from]; L[side]=L[side].filter(x=>x.u!==c.u); st.lanes[to][side].push(c); if(LOCS[st.lanes[to].loc].flyway) c.buff+=2; return to; }
 function pushAway(st,side,t,from){ if(!canMoveFrom(st,from)) return -1; const opts=[0,1,2].filter(j=>j!==from&&roomFor(st,j,side)); if(!opts.length) return -1; return moveCard(st,side,t,from,opts[Math.random()*opts.length|0]); }
 function reveal(st,side,c,li,log,fx){
   const say=m=>log&&log(trLog(m)), who=side==='p'?'Your':'Rival';
@@ -2367,17 +2375,17 @@ function reveal(st,side,c,li,log,fx){
   (st.turnRevealed=st.turnRevealed||[]).push({side,u:c.u});
   const en=opp(side), L=st.lanes[li];
   // Sentry: enemy lookouts here hit the newcomer
-  for(const e of alive(L[en])) for(const a of D(e).abs) if(a.k==='SENTRY'&&!has(D(c),'CAMO')){ c.buff-=a.n; fx&&fx.push({type:'hit',u:c.u}); say(`${side==='p'?'Rival':'Your'} ${D(e).name} · ${abName(a)}: ${D(c).name} −${a.n}.`); }
+  for(const e of alive(L[en])) for(const a of D(e).abs) if(a.k==='SENTRY'&&!has(D(c),'CAMO')){ c.buff-=a.n; fx&&fx.push({type:'hit',u:c.u,src:e.u}); say(`${side==='p'?'Rival':'Your'} ${D(e).name} · ${abName(a)}: ${D(c).name} −${a.n}.`); }
   // Cats scare mice away, on either side
   if(FELINE.has(c.id)) for(const s2 of ['p','o']) for(const m of alive(L[s2]).filter(x=>x.u!==c.u&&has(D(x),'FLEE'))){ const a=D(m).abs.find(x=>x.k==='FLEE'); if(!canMoveFrom(st,li)) continue;
     const opts=[0,1,2].filter(j=>j!==li&&roomFor(st,j,s2)).sort((x,y)=>diffOf(st,x,s2)-diffOf(st,y,s2)); if(!opts.length) continue;
-    moveCard(st,s2,m,li,opts[0]); m.buff+=a.n; say(`${D(m).name} · ${abName(a)}: escaped the ${D(c).name} to ${LOCS[st.lanes[opts[0]].loc].n}, +${a.n}.`); }
+    moveCard(st,s2,m,li,opts[0]); m.buff+=a.n; fx&&fx.push({type:'scare',u:m.u,src:c.u}); say(`${D(m).name} · ${abName(a)}: escaped the ${D(c).name} to ${LOCS[st.lanes[opts[0]].loc].n}, +${a.n}.`); }
   const times=LOCS[L.loc].echo?2:1;
   for(let k=0;k<times&&!c.dead;k++){ const cur=laneOf(st,side,c.u); if(cur<0) break; li=onReveal(st,side,c,cur,log,fx,prevU,k>0); }
   return li;
 }
 function onReveal(st,side,c,li,log,fx,prevU,again){
-  const say=m=>log&&log(trLog(m)), FX=(type,u,extra)=>fx&&fx.push({type,u,...extra});
+  const say=m=>log&&log(trLog(m)), FX=(type,u,extra)=>fx&&fx.push({type,u,src:c.u,...extra});
   const d=D(c), en=opp(side), who=side==='p'?'Your':'Rival';
   const E=()=>alive(st.lanes[li][en]), tg=()=>E().filter(e=>!has(D(e),'CAMO')), kl=()=>tg().filter(e=>canDie(st,li,en,e)&&!(has(d,'FRIENDS')&&D(e).cls==='F'));
   const pw=(x,s)=>power(st,li,s,x), tag=again?' ('+L('again')+')':'';
@@ -2385,27 +2393,27 @@ function onReveal(st,side,c,li,log,fx,prevU,again){
     switch(a.k){
       case 'VENOM': { const t=maxBy(tg(),e=>pw(e,en)); if(t){ t.buff-=a.n; FX('hit',t.u); say(`${who} ${d.name} · ${nm}: ${D(t).name} −${a.n}.`);} break; }
       case 'SHOCK': { const ts=tg(); ts.forEach(t=>{t.buff-=a.n; FX('hit',t.u);}); if(ts.length) say(`${who} ${d.name} · ${nm}: enemies here −${a.n}.`); break; }
-      case 'APEX': for(let i=0;i<a.n;i++){ const t=minBy(kl(),e=>pw(e,en)); if(!t) break; kill(st,t); say(`${who} ${d.name} · ${nm}: destroyed ${D(t).name}.`); } break;
-      case 'FRENZY': { const t=minBy(kl(),e=>pw(e,en)); if(t){ kill(st,t); c.buff+=a.n; say(`${who} ${d.name} · ${nm}: destroyed ${D(t).name}, +${a.n}.`);} break; }
-      case 'PUNCH': { const t=maxBy(kl().filter(e=>pw(e,en)<=a.n),e=>pw(e,en)); if(t){ kill(st,t); say(`${who} ${d.name} · ${nm}: destroyed ${D(t).name}.`);} break; }
-      case 'AMBUSH': { const me=pw(c,side); const t=maxBy(kl().filter(e=>pw(e,en)<me),e=>pw(e,en)); if(t){ kill(st,t); say(`${who} ${d.name} · ${nm}: destroyed ${D(t).name}.`);} break; }
-      case 'CULL': { const ts=kl().filter(e=>pw(e,en)<=a.n); ts.forEach(t=>kill(st,t)); if(ts.length) say(`${who} ${d.name} · ${nm}: destroyed ${ts.length} ${ts.length===1?'enemy':'enemies'}.`); break; }
+      case 'APEX': for(let i=0;i<a.n;i++){ const t=minBy(kl(),e=>pw(e,en)); if(!t) break; kill(st,t); FX('kill',t.u); say(`${who} ${d.name} · ${nm}: destroyed ${D(t).name}.`); } break;
+      case 'FRENZY': { const t=minBy(kl(),e=>pw(e,en)); if(t){ kill(st,t); FX('kill',t.u); c.buff+=a.n; say(`${who} ${d.name} · ${nm}: destroyed ${D(t).name}, +${a.n}.`);} break; }
+      case 'PUNCH': { const t=maxBy(kl().filter(e=>pw(e,en)<=a.n),e=>pw(e,en)); if(t){ kill(st,t); FX('kill',t.u); say(`${who} ${d.name} · ${nm}: destroyed ${D(t).name}.`);} break; }
+      case 'AMBUSH': { const me=pw(c,side); const t=maxBy(kl().filter(e=>pw(e,en)<me),e=>pw(e,en)); if(t){ kill(st,t); FX('kill',t.u); say(`${who} ${d.name} · ${nm}: destroyed ${D(t).name}.`);} break; }
+      case 'CULL': { const ts=kl().filter(e=>pw(e,en)<=a.n); ts.forEach(t=>{ kill(st,t); FX('kill',t.u); }); if(ts.length) say(`${who} ${d.name} · ${nm}: destroyed ${ts.length} ${ts.length===1?'enemy':'enemies'}.`); break; }
       case 'DRAW': { let n=0; for(let i=0;i<(a.n||1);i++){ const nc=drawCard(st,side); if(nc){ nc.spawnFrom=c.u; n++; } } say(n?`${who} ${d.name} · ${nm}: drew ${n===1?'a card':n+' cards'}.`:`${who} ${d.name} · ${nm}: hand full, no card drawn.`); break; }
       case 'SUMMON': { let n=0; const cnt=a.n+(LOCS[st.lanes[li].loc].kelp?1:0); for(let i=0;i<cnt;i++){ if(!roomFor(st,li,side)) break; const t=mk(st,a.x,c.v,0); t.t=st.turn; t.spawnFrom=c.u; st.lanes[li][side].push(t); n++; } if(n) say(`${who} ${d.name} · ${nm}: ${plural(n,DB[a.x].name)} join${n===1?'s':''}.`); break; }
       case 'MIGRATE': { let best=li, bd=diffOf(st,li,side);
         if(canMoveFrom(st,li)) for(let j=0;j<3;j++){ if(j===li||!roomFor(st,j,side)) continue; const dj=diffOf(st,j,side); if(dj<bd){best=j;bd=dj;} }
-        const moved=best!==li; if(moved) li=moveCard(st,side,c,li,best); c.buff+=a.n; say(`${who} ${d.name} · ${nm}: ${moved?'moved to '+LOCS[st.lanes[li].loc].n:'stayed'}, +${a.n}.`); break; }
-      case 'WANDER': { const to=pushAway(st,side,c,li); if(to>=0){ li=to; say(`${who} ${d.name} · ${nm}: wandered off to ${LOCS[st.lanes[li].loc].n}.`); } break; }
-      case 'MIMIC': { const L=st.lanes[li], others=[...alive(L[side]).filter(x=>x.u!==c.u).map(x=>[x,side]),...E().map(x=>[x,en])]; const t=maxBy(others,([x,s])=>pw(x,s)); if(t){ c.base=pw(t[0],t[1]); say(`${who} ${d.name} · ${nm}: copied ${D(t[0]).name} (${c.base}).`);} break; }
-      case 'RALLY': { const al=alive(st.lanes[li][side]).filter(x=>x.u!==c.u); al.forEach(x=>x.buff+=a.n); if(al.length) say(`${who} ${d.name} · ${nm}: allies here +${a.n}.`); break; }
-      case 'SONG': { let n=0; st.lanes.forEach(LL=>alive(LL[side]).forEach(x=>{ if(x.u!==c.u){ x.buff+=a.n; n++; } })); if(n) say(`${who} ${d.name} · ${nm}: ${n} allies everywhere +${a.n}.`); break; }
+        const moved=best!==li; if(moved){ li=moveCard(st,side,c,li,best); FX('move',c.u); } c.buff+=a.n; say(`${who} ${d.name} · ${nm}: ${moved?'moved to '+LOCS[st.lanes[li].loc].n:'stayed'}, +${a.n}.`); break; }
+      case 'WANDER': { const to=pushAway(st,side,c,li); if(to>=0){ li=to; FX('move',c.u); say(`${who} ${d.name} · ${nm}: wandered off to ${LOCS[st.lanes[li].loc].n}.`); } break; }
+      case 'MIMIC': { const L=st.lanes[li], others=[...alive(L[side]).filter(x=>x.u!==c.u).map(x=>[x,side]),...E().map(x=>[x,en])]; const t=maxBy(others,([x,s])=>pw(x,s)); if(t){ c.base=pw(t[0],t[1]); FX('copy',t[0].u); say(`${who} ${d.name} · ${nm}: copied ${D(t[0]).name} (${c.base}).`);} break; }
+      case 'RALLY': { const al=alive(st.lanes[li][side]).filter(x=>x.u!==c.u); al.forEach(x=>{ x.buff+=a.n; FX('buff',x.u); }); if(al.length) say(`${who} ${d.name} · ${nm}: allies here +${a.n}.`); break; }
+      case 'SONG': { let n=0; st.lanes.forEach(LL=>alive(LL[side]).forEach(x=>{ if(x.u!==c.u){ x.buff+=a.n; n++; FX('buff',x.u); } })); if(n) say(`${who} ${d.name} · ${nm}: ${n} allies everywhere +${a.n}.`); break; }
       case 'FIRST': { if(!E().length){ c.buff+=a.n; say(`${who} ${d.name} · ${nm}: got here first, +${a.n}.`); } break; }
       case 'HOARD': { st.bank=st.bank||{p:0,o:0}; st.bank[side]+=a.n; say(`${who} ${d.name} · ${nm}: +${a.n} energy next turn.`); break; }
-      case 'STEAL': { const t=maxBy(tg(),e=>pw(e,en)); if(t){ const n=FELINE.has(t.id)?a.n*2:a.n; t.buff-=n; c.buff+=n; FX('hit',t.u); say(`${who} ${d.name} · ${nm}: stole ${n} from ${D(t).name}.`);} break; }
-      case 'DRAIN': { const t=maxBy(tg(),e=>pw(e,en)); if(t){ t.buff-=a.n; c.buff+=a.n; FX('hit',t.u); say(`${who} ${d.name} · ${nm}: took ${a.n} from ${D(t).name}.`);} break; }
-      case 'STAMPEDE': { const t=minBy(tg(),e=>pw(e,en)); if(t&&pushAway(st,en,t,li)>=0) say(`${who} ${d.name} · ${nm}: pushed ${D(t).name} away.`); break; }
-      case 'PUSH': { const t=maxBy(tg().filter(e=>pw(e,en)<=a.n),e=>pw(e,en)); if(t&&pushAway(st,en,t,li)>=0) say(`${who} ${d.name} · ${nm}: kicked ${D(t).name} away.`); break; }
-      case 'CURRENT': { let n=0; for(let j=0;j<3;j++){ if(j===li||!canMoveFrom(st,j)) continue; for(const f of alive(st.lanes[j][side]).filter(x=>D(x).cls==='F')){ if(!roomFor(st,li,side)) break; moveCard(st,side,f,j,li); f.buff+=1; n++; } } if(n) say(`${who} ${d.name} · ${nm}: ${n} fish swam here, +1 each.`); break; }
+      case 'STEAL': { const t=maxBy(tg(),e=>pw(e,en)); if(t){ const n=FELINE.has(t.id)?a.n*2:a.n; t.buff-=n; c.buff+=n; FX('drain',t.u); say(`${who} ${d.name} · ${nm}: stole ${n} from ${D(t).name}.`);} break; }
+      case 'DRAIN': { const t=maxBy(tg(),e=>pw(e,en)); if(t){ t.buff-=a.n; c.buff+=a.n; FX('drain',t.u); say(`${who} ${d.name} · ${nm}: took ${a.n} from ${D(t).name}.`);} break; }
+      case 'STAMPEDE': { const t=minBy(tg(),e=>pw(e,en)); if(t&&pushAway(st,en,t,li)>=0){ FX('push',t.u); say(`${who} ${d.name} · ${nm}: pushed ${D(t).name} away.`); } break; }
+      case 'PUSH': { const t=maxBy(tg().filter(e=>pw(e,en)<=a.n),e=>pw(e,en)); if(t&&pushAway(st,en,t,li)>=0){ FX('push',t.u); say(`${who} ${d.name} · ${nm}: kicked ${D(t).name} away.`); } break; }
+      case 'CURRENT': { let n=0; for(let j=0;j<3;j++){ if(j===li||!canMoveFrom(st,j)) continue; for(const f of alive(st.lanes[j][side]).filter(x=>D(x).cls==='F')){ if(!roomFor(st,li,side)) break; moveCard(st,side,f,j,li); f.buff+=1; n++; FX('pull',f.u); } } if(n) say(`${who} ${d.name} · ${nm}: ${n} fish swam here, +1 each.`); break; }
       case 'ENCORE': { if(again) break; const al=alive(st.lanes[li][side]).filter(x=>x.u!==c.u&&!has(D(x),'ENCORE')&&!has(D(x),'CHATTER')); if(al.length) say(`${who} ${d.name} · ${nm}: encore!`); for(const x of al){ const xl=laneOf(st,side,x.u); if(xl>=0) onReveal(st,side,x,xl,log,fx,null,true); } break; }
       case 'CHATTER': { if(again||prevU==null) break; const xl=laneOf(st,side,prevU); if(xl<0) break; const x=st.lanes[xl][side].find(y=>y.u===prevU); if(!x||has(D(x),'CHATTER')||has(D(x),'ENCORE')) break; say(`${who} ${d.name} · ${nm}: copies ${D(x).name}.`); onReveal(st,side,x,xl,log,fx,null,true); break; }
     }
@@ -2463,7 +2471,7 @@ function pickLanes(exp){
 /* =====================================================================
    BATTLE UI — keyed card layer, drag and drop, fluid transitions
    ===================================================================== */
-const CEL=new Map(); let HW=84; let DRAG=null;
+const CEL=new Map(); let HW=84; let DRAG=null; let SKC=0;
 function startBattle(){
   const r=SV.run; if(!r) return;
   const cfg=nodeCfg(r), oDeck=shuffle(cfg.deck.slice()), oArt={}, a=r.ante;
@@ -2500,17 +2508,17 @@ function bBuild(){
    Wide screens (iPad landscape, desktop) move the message and End turn to a side column. */
 function bLayout(){
   const hz=$('#hz'), B=$('#battle'), bw=$('#bw'); if(!hz||!B||!bw) return;
-  const wide=innerWidth>=900&&innerWidth>innerHeight*1.15, side=wide?250:0;
+  const wide=innerWidth>=900&&innerWidth>innerHeight*1.15, side=0;
   B.classList.toggle('wide',wide);
   const cs=getComputedStyle(B), H=B.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
-  HW=Math.round(Math.max(70,Math.min(wide?120:110,(Math.min(innerWidth,wide?1100:820)-32-side)/(wide?5.2:4.5))));
+  HW=Math.round(Math.max(70,Math.min(wide?108:110,(Math.min(innerWidth,wide?1100:820)-32-side)/(wide?5.2:4.5))));
   const hand=HW*1.4+38, locH=104;
-  const fixed=48+hand+(wide?0:48+60)+(wide?24:40);
+  const fixed=48+hand+(wide?62:48+60)+(wide?24:40);
   const slotH=Math.max(60,(H-fixed-locH-18-30)/4), slotW=slotH/1.4;
   let boardW=(slotW+6)*6+16+30;
   boardW=Math.max(300,Math.min(boardW,innerWidth-32-side, wide?1000:860));
   bw.style.setProperty('--hw',HW+'px'); hz.style.setProperty('--hzh',Math.round(hand)+'px');
-  const apply=()=>{ bw.style.maxWidth=Math.round(boardW+side+(wide?16:0))+'px'; };
+  const brd=$('#board'), apply=()=>{ bw.style.maxWidth=Math.round(wide?Math.min(innerWidth-32,Math.max(boardW,820)):boardW)+'px'; if(brd){ brd.style.maxWidth=wide?Math.round(boardW)+'px':''; brd.style.width=wide?'100%':''; } };
   apply();
   // measure (without the floating cards), then shrink the board until nothing spills below the screen
   const lay=$('#layer'); if(lay) lay.style.display='none';
@@ -2525,10 +2533,12 @@ function targets(){
   const lr=$('#layer').getBoundingClientRect(), T=[];
   G.lanes.forEach((L,li)=>{ const n=Math.min(LOCS[L.loc].slots||4,G.narrow?3:4);
     for(const s of ['o','p']){
-      const list = s==='p' ? [...L.p, ...G.pq.filter(q=>q.li===li).map(q=>q.c)] : L.o;
+      const stg=(G.staged||[]).filter(x=>x.side===s&&x.li===li).map(x=>x.c);
+      const list=[...L[s], ...(s==='p'?G.pq.filter(q=>q.li===li).map(q=>q.c):[]), ...stg];
+      list.forEach(c=>{ if(c.sk==null) c.sk=++SKC; }); list.sort((a,b)=>a.sk-b.sk);
       const ord=ORDER[s+n];
       list.forEach((c,idx)=>{ const a=document.querySelector(`.anc[data-l="${li}"][data-s="${s}"][data-i="${ord[Math.min(idx,n-1)]}"]`); if(!a) return; const r=a.getBoundingClientRect();
-        T.push({c,x:r.left-lr.left,y:r.top-lr.top,s:r.width/HW,r:0,where:'board',li,side:s,pend:G.pq.some(q=>q.c.u===c.u)}); });
+        T.push({c,x:r.left-lr.left,y:r.top-lr.top,s:r.width/HW,r:0,where:'board',li,side:s,pend:G.pq.some(q=>q.c.u===c.u),staged:stg.includes(c)}); });
     }
   });
   const hz=$('#hz').getBoundingClientRect(), n=G.pHand.length, hh=HW*1.4;
@@ -2559,6 +2569,9 @@ function bRender(){
     if(!rec){ rec=makeEl(c, t.side==='o'?'o':'p'); CEL.set(c.u,rec); }
     const el=rec.el;
     el.classList.toggle('pend',!!t.pend);
+    const wantDown=(t.staged&&!c.flipped)||(G.fog&&!G.over&&t.side==='o'&&t.where==='board');
+    if(!isNew) el.querySelector('.tci').classList.toggle('down',wantDown);
+    t.down=wantDown;
     { const oi=t.pend?G.pq.findIndex(q=>q.c.u===c.u)+1:0; let ob=el.querySelector('.ord');
       if(oi&&G.pq.length>1){ if(!ob){ ob=document.createElement('span'); ob.className='ord'; el.appendChild(ob); } ob.textContent=oi; } else if(ob) ob.remove(); }
     el.classList.toggle('poor',t.where==='hand'&&D(c).cost>energy&&!G.busy);
@@ -2579,15 +2592,41 @@ function bRender(){
       let from; const src=c.spawnFrom&&CEL.get(c.spawnFrom);
       if(src){ const r=src.el.getBoundingClientRect(); from=tf(r.left-lr.left,r.top-lr.top,t.s*.6,0); }
       else if(t.where==='hand'){ from=tf(lr.width-HW*.6,lr.height-HW*1.6,.7,25); }
-      else if(t.side==='o'){ from=tf(t.x,-HW*1.6,t.s*1.3,-10); }
+      else if(t.side==='o'){ from=tf(t.x,-HW*1.6,t.s*1.3,-10); el.querySelector('.tci').classList.add('down'); }
       else from=tf(t.x,t.y,t.s*.5,0);
       el.style.transform=from;
       if(t.where==='hand'||t.side==='o') el.querySelector('.tci').classList.add('down');
     }
     $('#layer').getBoundingClientRect();
-    for(const [rec,t,target] of fresh){ const el=rec.el; el.style.transition=''; el.style.transform=target; const tci=el.querySelector('.tci'); if(tci.classList.contains('down')&&!(G.fog&&!G.over&&t.side==='o')) setTimeout(()=>tci.classList.remove('down'),t.side==='o'?220:120); delete t.c.spawnFrom; }
+    for(const [rec,t,target] of fresh){ const el=rec.el; el.style.transition=''; el.style.transform=target; const tci=el.querySelector('.tci'); if(t.down) tci.classList.add('down'); else if(tci.classList.contains('down')) setTimeout(()=>tci.classList.remove('down'),t.side==='o'?220:120); delete t.c.spawnFrom; }
   }
   for(const [u,rec] of CEL){ if(!seen.has(u)&&!(DRAG&&DRAG.u===u)){ rec.el.style.opacity='0'; setTimeout(()=>rec.el.remove(),400); CEL.delete(u); } }
+}
+/* ---------- interaction animations: who hit whom, what moved where ---------- */
+function fxBox(u){ const r=CEL.get(u); if(!r||!r.el.isConnected) return null; const b=r.el.getBoundingClientRect(), l=$('#layer').getBoundingClientRect(); return {x:b.left-l.left+b.width/2,y:b.top-l.top+b.height/2,el:r.el}; }
+function fxLunge(u,tu,amt,dur){ const a=fxBox(u), b=fxBox(tu); if(!a||!b||RM) return; const cur=a.el.style.transform, dx=(b.x-a.x)*amt, dy=(b.y-a.y)*amt; a.el.style.zIndex=40;
+  a.el.animate([{transform:cur},{transform:`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) ${cur}`,offset:.42,easing:'cubic-bezier(.6,0,.9,.4)'},{transform:cur}],{duration:dur,easing:'cubic-bezier(.2,.7,.3,1)'}); }
+function fxOrb(fu,tu,kind,dur){ const a=fxBox(fu), b=fxBox(tu); if(!a||!b) return; const o=document.createElement('i'); o.className='fxorb '+kind; $('#layer').appendChild(o);
+  const mx=(a.x+b.x)/2, my=Math.min(a.y,b.y)-Math.min(60,Math.abs(a.x-b.x)*.25+20);
+  o.animate([{transform:`translate(${a.x}px,${a.y}px) scale(.5)`,opacity:0},{transform:`translate(${mx}px,${my}px) scale(1.1)`,opacity:1,offset:.5},{transform:`translate(${b.x}px,${b.y}px) scale(.9)`,opacity:1}],{duration:dur,easing:'cubic-bezier(.45,0,.55,1)',fill:'forwards'});
+  setTimeout(()=>o.remove(),dur+80); }
+function fxHit(u,kind){ const r=CEL.get(u); if(!r) return; const el=r.el; el.classList.remove('hit','struck','buffed'); void el.offsetWidth; el.classList.add(kind||'hit'); setTimeout(()=>el.classList.remove(kind||'hit'),650); }
+async function playFx(fx){
+  if(!fx.length) return;
+  const steps=[]; for(const f of fx){ const last=steps[steps.length-1]; if(last&&last.type===f.type&&last.src===f.src) last.us.push(f.u); else steps.push({type:f.type,src:f.src,us:[f.u]}); }
+  for(const s of steps.slice(0,6)){
+    const us=s.us.filter(u=>CEL.get(u)), first=us[0]; if(!first&&s.type!=='move') continue;
+    switch(s.type){
+      case 'hit': us.forEach(u=>fxOrb(s.src,u,'bad',380)); await sleep(360); us.forEach(u=>fxHit(u)); await sleep(200); break;
+      case 'drain': us.forEach(u=>fxHit(u)); await sleep(120); us.forEach(u=>fxOrb(u,s.src,'drain',420)); await sleep(420); fxHit(s.src,'buffed'); await sleep(140); break;
+      case 'kill': fxLunge(s.src,first,.55,460); await sleep(190); us.forEach(u=>{ fxHit(u,'struck'); }); await sleep(330); break;
+      case 'push': fxLunge(s.src,first,.5,440); await sleep(185); us.forEach(u=>fxHit(u)); await sleep(160); break;
+      case 'scare': fxLunge(s.src,first,.3,380); await sleep(170); us.forEach(u=>fxHit(u)); await sleep(120); break;
+      case 'buff': us.forEach(u=>fxOrb(s.src,u,'good',380)); await sleep(360); us.forEach(u=>fxHit(u,'buffed')); await sleep(160); break;
+      case 'copy': fxOrb(first,s.src,'copy',420); await sleep(420); fxHit(s.src,'buffed'); await sleep(120); break;
+      case 'pull': us.forEach(u=>fxOrb(s.src,u,'copy',320)); await sleep(300); break;
+    }
+  }
 }
 function floatDelta(el,d){ const f=document.createElement('span'); f.className='float '+(d>0?'up':'down'); f.textContent=(d>0?'+':'−')+Math.abs(d); el.appendChild(f); setTimeout(()=>f.remove(),1200); }
 function banner(t,sub){ const b=document.createElement('div'); b.className='banner'; b.innerHTML=`${t}<small>${sub}</small>`; $('#battle').appendChild(b); setTimeout(()=>b.remove(),1600); }
@@ -2671,17 +2710,25 @@ async function endTurn(){
   const pPlays=G.pq.map(q=>({side:'p',c:q.c,li:q.li}));
   const pFirst=G.prio==='p';
   const seq=orderReveals(pFirst?[...pPlays,...oPlays]:[...oPlays,...pPlays]);
+  // everything lands at once, face-down, then flips in reveal order
+  [...pPlays,...oPlays].forEach(x=>{ x.c.flipped=false; if(x.c.sk==null) x.c.sk=++SKC; });
+  G.staged=seq.slice(); G.pq=[];
   G.msg=(pFirst?L('You have priority. Your cards reveal first, in the order you played them.'):L('Your rival has priority and reveals first.'))+(oPlays.length?'':L(' Your rival holds back.'));
-  bRender(); await sleep(450);
+  bRender(); await sleep(seq.length?750:450);
   for(const st of seq){
-    if(st.side==='p'){ G.pq=G.pq.filter(q=>q.c.u!==st.c.u); G.played.add(st.c.id); }
+    if(st.side==='p') G.played.add(st.c.id);
+    // flip it face up where it sits
+    const rec=CEL.get(st.c.u); st.c.flipped=true;
+    if(rec){ rec.el.style.zIndex=12; if(!(G.fog&&st.side==='o')) rec.el.querySelector('.tci').classList.remove('down'); rec.el.classList.add('glow'); setTimeout(()=>rec.el.classList.remove('glow'),900); }
+    await sleep(rec?430:0);
+    G.staged=G.staged.filter(x=>x!==st);
     let line=''; const fx=[];
     reveal(G,st.side,st.c,st.li,m=>{ line=line?line+' '+m:m; },fx);
     G.msg=line?esc(line):L('{} played <b>{}</b>.',st.side==='p'?L('You'):L('Rival'),esc(D(st.c).name));
+    $('#binfo').innerHTML='<span>'+G.msg+'</span>';
+    await playFx(fx);
     bRender();
-    const rec=CEL.get(st.c.u); if(rec){ rec.el.classList.add('glow'); setTimeout(()=>rec.el.classList.remove('glow'),700); }
-    fx.forEach(f=>{ const r=CEL.get(f.u); if(r){ r.el.classList.remove('hit'); void r.el.offsetWidth; r.el.classList.add('hit'); } });
-    await sleep(line?1150:700);
+    await sleep(line?850:450);
     if(G.lanes.some(L=>L.p.some(c=>c.dead)||L.o.some(c=>c.dead))){ await sleep(250); G.lanes.forEach(L=>{L.p=alive(L.p);L.o=alive(L.o);}); bRender(); await sleep(250); }
   }
   { let line=''; endOfTurn(G,m=>{ line=line?line+' '+m:m; }); if(line){ G.msg=esc(line); bRender(); await sleep(1100); } }
