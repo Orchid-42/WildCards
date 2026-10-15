@@ -234,14 +234,14 @@ to{background-position:100% 100%,0 0}}
 .pw.pop{animation:pop .45s var(--ease)}
 @keyframes pop{40%{transform:scale(calc(var(--bs,1)*1.45))}}
 .plate{position:absolute;left:3.2cqw;right:3.2cqw;bottom:3.2cqw;z-index:4;border-radius:0 0 4.6cqw 4.6cqw;padding:13cqw 5cqw 4.6cqw;background:linear-gradient(to top,rgba(10,11,14,.96) 50%,rgba(10,11,14,.6) 76%,rgba(10,11,14,0))}
-.plate .nm{font-weight:700;font-size:7.4cqw;line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
-.plate .sub{display:flex;align-items:center;gap:1.6cqw;font-family:var(--mono);font-size:3.8cqw;letter-spacing:.06em;text-transform:uppercase;color:#c5c7cf;margin-top:1.6cqw}
+.plate .nm{font-weight:700;font-size:calc(7.4cqw*var(--nmS,1));line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
+.plate .sub{display:flex;align-items:center;gap:1.6cqw;font-family:var(--mono);font-size:calc(3.8cqw*var(--sbS,1));letter-spacing:.06em;text-transform:uppercase;color:#c5c7cf;margin-top:1.6cqw;white-space:nowrap}
 .plate .sub i{width:2.4cqw;height:2.4cqw;border-radius:50%;background:var(--bc);flex:none}
-.plate .txt{font-size:5cqw;line-height:1.32;margin-top:2.6cqw;color:#e4e5ea}
+.plate .txt{font-size:calc(5cqw*var(--txS,1));line-height:1.32;margin-top:2.6cqw;color:#e4e5ea}
 .plate .txt p{margin:0 0 1.4cqw}
 .plate .txt b{color:var(--amber2);font-weight:600}
 .plate .txt i{color:#b9bbc4}
-@container (max-width:170px){.plate .txt,.plate .sub{display:none}.plate{padding:10cqw 5cqw 4cqw}.plate .nm{font-size:9.5cqw}}
+@container (max-width:170px){.plate .txt,.plate .sub{display:none}.plate{padding:10cqw 5cqw 4cqw}.plate .nm{font-size:calc(9.5cqw*var(--nmS,1))}}
 @container (max-width:100px){.plate{display:none}}
 
 /* ===== collection ===== */
@@ -598,12 +598,15 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padd
 .zinfo .vsoon{position:relative;width:64px;border-radius:8px;overflow:hidden;opacity:.55;filter:grayscale(1);pointer-events:none}
 .zinfo .vsoon img{display:block;width:100%;aspect-ratio:5/7;object-fit:cover}
 .zinfo .vsoon span{position:absolute;inset:auto 0 0 0;padding:4px 5px;font-size:9.5px;font-weight:700;line-height:1.15;text-align:center;background:rgba(0,0,0,.7);color:#fff}
+.pill.lang{gap:0;padding:3px;border:0;cursor:pointer;font:inherit;color:inherit}
+.pill.lang b{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 7px;border-radius:999px;color:var(--muted)}
+html[lang="en"] .pill.lang b[data-l="en"],html[lang="pt-BR"] .pill.lang b[data-l="pt"]{background:var(--text);color:var(--bg)}
 </style>
 
 <div id="app">
   <header class="top">
     <div class="mark"><i><svg viewBox="0 0 84 84" aria-hidden="true"><path d="M24 12h36a6 6 0 0 1 6 6v48a6 6 0 0 1-6 6H24a6 6 0 0 1-6-6V18a6 6 0 0 1 6-6z"/><circle cx="42" cy="50" r="8"/><circle cx="31" cy="36" r="3.5"/><circle cx="39" cy="31" r="3.5"/><circle cx="47" cy="31" r="3.5"/><circle cx="55" cy="36" r="3.5"/></svg></i>WildCards</div>
-    <div class="wallet"><div class="pill" title="Discovered animals"><span class="clv"></span><span id="clN">0</span></div><div class="pill" title="Run coins"><span class="coin"></span><span id="coinN">0</span></div></div>
+    <div class="wallet"><button class="pill lang" data-act="lang" title="Language" aria-label="Language"><b data-l="en">EN</b><b data-l="pt">PT</b></button><div class="pill" title="Discovered animals"><span class="clv"></span><span id="clN">0</span></div><div class="pill" title="Run coins"><span class="coin"></span><span id="coinN">0</span></div></div>
   </header>
   <main id="view"></main>
   <nav class="nav" id="nav">
@@ -723,7 +726,7 @@ const FIN_DESC = ['Standard grey border.','Brushed silver border with a raised e
 const VARS = [{k:'field',n:'Base',sfx:''},{k:'dusk',n:'Variant 1',sfx:'v1'},{k:'night',n:'Variant 2',sfx:'v2'},{k:'sketch',n:'Variant 3',sfx:'v3'}];
 const VSFX = {base:'field',field:'field',v1:'dusk',variant1:'dusk',dusk:'dusk',v2:'night',variant2:'night',night:'night',v3:'sketch',variant3:'sketch',sketch:'sketch'};
 const an = w => (/^[AEIOU]/.test(w)?'an ':'a ')+w;
-const plural = (n,w) => n===1 ? an(w) : `${n} ${w.endsWith('s')?w+'es':w+'s'}`;
+const plural = (n,w) => PT ? ptPlural(n,w) : n===1 ? an(w) : `${n} ${w.endsWith('s')?w+'es':w+'s'}`;
 
 const AB = {
   HERD:{nm:'Herd',t:a=>`+${a.n} for each other Herbivore you have here.`},
@@ -783,6 +786,223 @@ const AB = {
   CLAN:{nm:'Laughing Clan',t:a=>`+${a.n} for each other Carnivore you have here, and +${a.n} more for each card destroyed here this game.`}
 };
 const FELINE = new Set(['lion','lioness','tiger','cheetah','snowleopard','sandcat','housecat']);
+/* =====================================================================
+   LANGUAGE — English / Português (Brasil)
+   Card data is swapped at load (names, abilities, habitats, gear); interface text is
+   translated by TR (exact strings and {} patterns) as it reaches the page. Switching reloads.
+   ===================================================================== */
+const LKEY='wildcards.lang';
+const LANG=(()=>{ try{ const s=localStorage.getItem(LKEY); if(s==='en'||s==='pt') return s; }catch(e){} return /^pt/i.test(navigator.language||'')?'pt':'en'; })();
+const PT=LANG==='pt';
+const NUMLOC=PT?'pt-BR':'en-US';
+document.documentElement.lang=PT?'pt-BR':'en';
+function setLang(l){ try{ localStorage.setItem(LKEY,l); }catch(e){} location.reload(); }
+
+/* ---- interface strings: English → Portuguese. {} = a value; in the Portuguese side {0},{1} pick values,
+   {0#one|many} picks by number, {1?yes|no} picks by whether the value is empty ---- */
+const TR_PT={
+'Discovered animals':'Animais descobertos','Run coins':'Moedas da expedição','Play':'Jogar','Collection':'Coleção','Art':'Arte',
+'No ability.':'Sem habilidade.','Pack':'Bando',
+'picture variants (coming soon)':'variantes de imagem (em breve)','{} border':'borda {0}','border colours':'cores de borda','{} finish':'acabamento {0}','{} art':'arte {0}',
+'Start an expedition':'Comece uma expedição',
+'Cross three biomes. Win battles, shop between them, and build your deck as you go. Beat the final boss in about 15 minutes, then keep going for a high score.':'Atravesse três biomas. Vença batalhas, faça compras entre elas e monte seu deck pelo caminho. Derrote o chefe final em uns 15 minutos e depois continue atrás de um recorde.',
+'New run':'Nova expedição','How to play':'Como jogar','Save code':'Código do save','Best score':'Recorde','Best stage':'Melhor fase','Runs':'Expedições','Discovered':'Descobertos',
+'Testing':'Testes','Shortcuts for checking art and cosmetics.':'Atalhos para conferir artes e visuais.','Discover all':'Descobrir todos','+20 XP to all':'+20 XP para todos',
+'This code holds your whole progress: {} discovered animals, card levels and looks, best score{}. Copy it, then paste it under':'Este código guarda todo o seu progresso: {0} animais descobertos, níveis e visuais das cartas, recorde{1}. Copie e cole em',
+'and your current run':'e a expedição atual','Load a code':'Carregar um código','on another device.':'em outro aparelho.','Copy code':'Copiar código',
+'Paste a code from another device. It replaces the progress on this one.':'Cole um código de outro aparelho. Ele substitui o progresso deste.',
+'Load this code':'Carregar este código','Close':'Fechar','Share…':'Compartilhar…','This device is too old to read that code.':'Este aparelho é antigo demais para ler esse código.',
+"That code doesn't look right. Copy the whole thing, starting with WC.":'Esse código parece incorreto. Copie tudo, começando por WC.',
+'Found {} animals and a best score of {}.':'{0} animais encontrados e recorde de {1}.',"Tap again to replace this device's progress.":'Toque de novo para substituir o progresso deste aparelho.',
+'Replace my progress':'Substituir meu progresso','Progress loaded.':'Progresso carregado.','Code copied.':'Código copiado.','Select the code and copy it.':'Selecione o código e copie.','WildCards save':'Save do WildCards',
+'How a run works':'Como funciona uma expedição','Three stages, three battles each.':'Três fases, três batalhas cada.',
+'Two battles, then a boss with a twist. Each stage is a different biome.':'Duas batalhas e depois um chefe com uma regra especial. Cada fase é um bioma diferente.',
+'Order matters.':'A ordem importa.',
+'Cards reveal one by one in the order you play them. Whoever is winning has priority and reveals first; turn 1 is a coin toss.':'As cartas são reveladas uma a uma, na ordem em que você joga. Quem está vencendo tem prioridade e revela primeiro; no turno 1 é cara ou coroa.',
+'Every rival is different.':'Cada rival é diferente.','A random theme and play style each battle. You scout 3 of their cards.':'Tema e estilo de jogo aleatórios a cada batalha. Você espia 3 cartas do rival.',
+'Your deck starts small.':'Seu deck começa pequeno.',"8 animals you've already discovered.":'8 animais que você já descobriu.',
+'Shop between battles.':'Compre entre as batalhas.','Cards, Field and Biome packs, and Field Gear that bends the rules.':'Cartas, pacotes de Campo e de Bioma, e equipamentos que mudam as regras.',
+'Discoveries stay.':'Descobertas ficam.','New animals from packs unlock for every future run.':'Animais novos dos pacotes ficam liberados para todas as próximas expedições.',
+'Three lives.':'Três vidas.','Losing costs one. Lose a boss and you fight it again.':'Cada derrota custa uma. Perdeu para um chefe? Enfrenta de novo.',
+'Cards level up by being played.':'Cartas sobem de nível ao serem jogadas.','Levels unlock borders, finishes, colours and pictures.':'Níveis liberam bordas, acabamentos, cores e imagens.',
+'Final boss':'Chefe final','Boss':'Chefe','Battle {}':'Batalha {0}','Done':'Concluída','Bought':'Comprado','Opened':'Aberto','Tap to sell':'Toque para vender','Sell · {}':'Vender · {0}',
+'No gear yet. You can carry up to 5 pieces.':'Nenhum equipamento ainda. Você pode levar até 5.','For sale':'À venda','Yours · {}/5 · lasts until the run ends':'Seus · {0}/5 · duram até o fim da expedição','Sold out.':'Esgotado.',
+'Tap a card to release it (2 coins) · Battles won {}/{}':'Toque numa carta para liberá-la (2 moedas) · Batalhas vencidas {0}/{1}','Lv {}':'Nv {0}','· Lv 3':'· Nv 3',
+'Tap again to end the run':'Toque de novo para encerrar','End run':'Encerrar expedição','{}Stage {}':'{0}Fase {1}','Endless ·':'Infinito ·','Score':'Pontos','Start battle':'Começar batalha',
+'Apex Summit':'Cume dos Predadores','Boss battle':'Batalha de chefe','Next battle':'Próxima batalha','Rival cards +{} power.':'Cartas do rival +{0} de poder.',
+'Shop':'Loja','Gear {}/5':'Equip. {0}/5','Deck {}':'Deck {0}','+{} interest ·':'+{0} juros ·','Reroll · {}':'Renovar · {0}','{} lives':'{0} {0#vida|vidas}','again':'de novo',
+'All':'Todos','Collection · {} of {} discovered':'Coleção · {0} de {1} descobertos','Tier {} · {}':'Tier {0} · {1}','No animals of this tier in that biome.':'Nenhum animal deste tier nesse bioma.',
+'Class':'Classe','Habitat':'Habitat','Diet':'Dieta','Status':'Status','Weight':'Peso','Top speed':'Velocidade máx.','Token':'Invocado',
+'Level {}':'Nível {0}','{} XP · played {}×':'{0} XP · jogada {1}×','Border':'Borda','Colour{}':'Cor{0}','Finish':'Acabamento','Picture':'Imagem',
+'{} XP to level {}: {}.':'{0} XP para o nível {1}: {2}.','Max level. Everything is unlocked.':'Nível máximo. Tudo liberado.',
+'Variants coming soon':'Variantes em breve','Base picture':'Imagem base','Hold and drag to tilt · tap to put back':'Segure e arraste para inclinar · toque para devolver',
+'Field Pack':'Pacote de Campo','Pick 1 of 3, any biome':'Escolha 1 de 3, qualquer bioma','FIELD':'CAMPO','Gear Crate':'Caixa de Equipamentos','Pick 1 of 2 Field Gear':'Escolha 1 de 2 equipamentos','GEAR':'EQUIP.',
+'{} Pack':'Pacote {0}','Pick 1 of 3 {} animals':'Escolha 1 de 3 animais ({0})','{} · PICK 1':'{0} · ESCOLHA 1','ITEMS':'ITENS','CARDS':'CARTAS',
+'Your gear slots are full. Sell one first.':'Seus espaços de equipamento estão cheios. Venda um antes.','You already own every piece of gear.':'Você já tem todos os equipamentos.',
+'Pick one':'Escolha um','Skip':'Pular','Take':'Pegar','Nothing left to find in this pack.':'Não há mais nada para encontrar neste pacote.',
+'{} Herbivore{} in your deck':'{0} {1?Herbívoros|Herbívoro} no seu deck','{} Bird{} in your deck':'{0} {1?Aves|Ave} no seu deck','{} Invertebrate{} in your deck':'{0} {1?Invertebrados|Invertebrado} no seu deck',
+'{} Tundra animal{} in your deck':'{0} {1?animais|animal} da Tundra no seu deck','{} Pack animal{} in your deck':'{0} {1?animais|animal} de Bando no seu deck','{} {}{} in your deck':'{0} {1}{2} no seu deck',
+'Boosts {}{}':'Fortalece {0}{1}','and {} more':'e mais {0}','Best friends with your {}':'Melhores amigos com {0} do seu deck',"Your {}'s best friend":'Melhor amigo de {0} do seu deck',
+'Your cats can chase it around':'Seus felinos podem persegui-lo','Scares your mouse into a better spot':'Assusta seu camundongo para um lugar melhor',
+'{} Carnivore{} in your deck for the clan':'{0} {1?Carnívoros|Carnívoro} no seu deck para o clã','{} Fish in your deck to ride the current':'{0} {0#Peixe|Peixes} no seu deck para pegar a corrente','{} applies':'{0} se aplica',
+'Drag across the top edge to tear it open, or tap it.':'Arraste pela borda de cima para rasgar, ou toque.','New discovery':'Nova descoberta',
+'Tap a card to choose it, then add it to your run deck':'Toque numa carta para escolher e depois adicione ao seu deck','Add {}':'Adicionar {0}',
+'{} discovered.':'Descoberta: {0}.','It can now show up in every run.':'Agora pode aparecer em todas as expedições.','{} joins your run deck.':'{0} entrou no seu deck.',
+'name + text':'nome + texto','Card layout guide':'Guia de layout da carta','Tokens':'Invocados','Connecting to storage…':'Conectando ao armazenamento…',
+'{}/{} pictures added. Uploads show everywhere in the game.':'{0}/{1} imagens adicionadas. Os envios aparecem em todo o jogo.','Preview mode. Uploads show until you reload.':'Modo de prévia. Os envios aparecem até você recarregar.',
+'Art studio':'Estúdio de arte','Card pictures':'Imagens das cartas','Add many…':'Adicionar várias…','Export CSV':'Exportar CSV','Guide':'Guia','Picture guide':'Guia de imagens',
+'One flat picture per slot,':'Uma imagem plana por espaço,','. PNG, JPG or WebP.':'. PNG, JPG ou WebP.','Name files like':'Nomeie os arquivos como','for the base and':'para a base e','for variants, then use':'para variantes, depois use','Add many':'Adicionar várias',
+'Picture variants are coming soon. For now every card uses its base picture.':'Variantes de imagem chegam em breve. Por enquanto toda carta usa a imagem base.',
+'Replace':'Substituir','Upload':'Enviar','Remove':'Remover','Preview border':'Prévia da borda','Hold and drag the card to see how the border and finish catch the light.':'Segure e arraste a carta para ver como a borda e o acabamento refletem a luz.',
+'Preview finish':'Prévia do acabamento','Picture variants are coming soon. For now each card has one picture.':'Variantes de imagem chegam em breve. Por enquanto cada carta tem uma imagem.',
+'1000 × 1400, flat.':'1000 × 1400, plana.','Uploading…':'Enviando…','Preview only. This upload won’t be saved.':'Só prévia. Este envio não será salvo.',
+'That file is over 20 MB. Export a smaller version.':'Esse arquivo passa de 20 MB. Exporte uma versão menor.','Use PNG, JPG or WebP.':'Use PNG, JPG ou WebP.','Storage is full for this page.':'O armazenamento desta página está cheio.',
+'Too many uploads at once. Wait a moment and try again.':'Envios demais de uma vez. Espere um pouco e tente de novo.','Picture added.':'Imagem adicionada.','Upload failed. Try again.':'O envio falhou. Tente de novo.',
+'Uploading {} of {}…':'Enviando {0} de {1}…','{} picture{} matched':'{0} {1?imagens associadas|imagem associada}',"Couldn't match {} file{}. Name files like":'Não deu para associar {0} {1?arquivos|arquivo}. Nomeie os arquivos como',
+'for the base picture and':'para a imagem base e','for variants.':'para variantes.','Sheet saved.':'Planilha salva.','Sheet copied. Paste it into a spreadsheet.':'Planilha copiada. Cole numa planilha.','Art sheet':'Planilha de arte','Select all and copy into a spreadsheet.':'Selecione tudo e copie numa planilha.',
+'Printed power':'Poder impresso','Boosts':'Bônus','Wounds':'Ferimentos','Native to {}':'Nativo: {0}','Rival strength':'Força do rival',
+'{} had no room and went back to the hand.':'{0} ficou sem espaço e voltou para a mão.','{} found no room.':'{0} não encontrou espaço.',
+'Your':'Você','Rival':'Rival','You':'Você','a card':'uma carta','{} cards':'{0} cartas','stayed':'ficou','moved to {}':'foi para {0}',
+'{} · {}: escaped the {} to {}, +{}.':'{0} · {1}: fugiu de {2} para {3}, +{4}.',
+'{} {} · {}: enemies here −{}.':'{0} · {1} · {2}: inimigos aqui −{3}.','{} {} · {}: destroyed {}.':'{0} · {1} · {2}: destruiu {3}.','{} {} · {}: destroyed {}, +{}.':'{0} · {1} · {2}: destruiu {3}, +{4}.',
+'{} {} · {}: destroyed {} {}.':'{0} · {1} · {2}: destruiu {3} {3#inimigo|inimigos}.','{} {} · {}: drew {}.':'{0} · {1} · {2}: comprou {3}.','{} {} · {}: hand full, no card drawn.':'{0} · {1} · {2}: mão cheia, nenhuma carta comprada.',
+'{} {} · {}: {} join{}.':'{0} · {1} · {2}: {3} {4?entra|entram}.','{} {} · {}: wandered off to {}.':'{0} · {1} · {2}: vagou até {3}.','{} {} · {}: copied {} ({}).':'{0} · {1} · {2}: copiou {3} ({4}).',
+'{} {} · {}: allies here +{}.':'{0} · {1} · {2}: aliados aqui +{3}.','{} {} · {}: {} allies everywhere +{}.':'{0} · {1} · {2}: {3} aliados em todo lugar +{4}.','{} {} · {}: got here first, +{}.':'{0} · {1} · {2}: chegou primeiro, +{3}.',
+'{} {} · {}: +{} energy next turn.':'{0} · {1} · {2}: +{3} de energia no próximo turno.','{} {} · {}: stole {} from {}.':'{0} · {1} · {2}: roubou {3} de {4}.','{} {} · {}: took {} from {}.':'{0} · {1} · {2}: tirou {3} de {4}.',
+'{} {} · {}: pushed {} away.':'{0} · {1} · {2}: empurrou {3} para longe.','{} {} · {}: kicked {} away.':'{0} · {1} · {2}: chutou {3} para longe.',
+'{} {} · {}: {} fish swam here, +1 each.':'{0} · {1} · {2}: {3} {3#peixe veio|peixes vieram} nadando, +1 cada.','{} {} · {}: encore!':'{0} · {1} · {2}: bis!','{} {} · {}: copies {}.':'{0} · {1} · {2}: copia {3}.',
+'{} {} · {}: {} −{}.':'{0} · {1} · {2}: {3} −{4}.','{} {} · {}: +{}.':'{0} · {1} · {2}: +{3}.','{} {} · {}: {}, +{}.':'{0} · {1} · {2}: {3}, +{4}.',
+'{}: {} was revealed last here, +2.':'{0}: {1} foi a última revelada aqui, +2.','{}: {} was the weakest and is gone.':'{0}: {1} era a mais fraca e se foi.',
+'Stage {} · {}{} · {}':'Fase {0} · {1}{2} · {3}','Turn {}/6':'Turno {0}/6','Retreat':'Recuar','End turn':'Encerrar turno','You reveal first':'Você primeiro','Rival reveals first':'Rival primeiro',
+'Your deck {}':'Seu deck {0}','Rival hand {} · deck {}':'Mão do rival {0} · deck {1}','Revealing…':'Revelando…','Final reveal':'Revelação final','Tap again':'Toque de novo',
+'You have <b>priority</b>: your cards reveal first.':'Você tem <b>prioridade</b>: suas cartas revelam primeiro.','Your rival has <b>priority</b> and reveals first.':'Seu rival tem <b>prioridade</b> e revela primeiro.',
+'Coin toss: you have <b>priority</b>.':'Cara ou coroa: você tem <b>prioridade</b>.','Coin toss: your rival has <b>priority</b>.':'Cara ou coroa: seu rival tem <b>prioridade</b>.',
+'{} Cards reveal in the order you play them.':'{0} As cartas revelam na ordem em que você joga.','Night falls. {}':'A noite cai. {0}','<b>Final turn.</b> {}':'<b>Último turno.</b> {0}','Turn {}. {}':'Turno {0}. {1}',
+' You have <b>+{} bonus energy</b> this turn.':' Você tem <b>+{0} de energia bônus</b> neste turno.',
+'FINAL TURN':'ÚLTIMO TURNO','TURN {}':'TURNO {0}','Night · {} energy':'Noite · {0} de energia','{} energy':'{0} de energia',
+'is set at {}. Drag it back to your hand to undo.':'está em {0}. Arraste de volta para a mão para desfazer.','Returned to your hand.':'Voltou para a sua mão.',
+'{} costs {}. You have {} energy left.':'{0} custa {1}. Você tem {2} de energia sobrando.','No room for you at {}.':'Sem espaço para você em {0}.',
+'Hidden by fog':'Escondida pela neblina','Rival cards stay face-down until the battle ends.':'As cartas do rival ficam viradas até o fim da batalha.',
+'Your card':'Sua carta','Rival card':'Carta do rival','Current power':'Poder atual','Costs {} energy. Native habitat: {} (+2 there).':'Custa {0} de energia. Habitat nativo: {1} (+2 lá).',
+'You have priority. Your cards reveal first, in the order you played them.':'Você tem prioridade. Suas cartas revelam primeiro, na ordem em que você jogou.',
+'Your rival has priority and reveals first.':'Seu rival tem prioridade e revela primeiro.',' Your rival holds back.':' Seu rival segura as cartas.','{} played':'{0} jogou','{} played <b>{}</b>.':'{0} jogou <b>{1}</b>.','<b>{}</b> is set at {}. Drag it back to your hand to undo.':'<b>{0}</b> está em {1}. Arraste de volta para a mão para desfazer.',
+'Power in won habitats':'Poder nos habitats vencidos','× habitats won{}':'× habitats vencidos{0}','(Field Notebook doubles it)':'(o Caderno de Campo dobra)','× Panorama':'× Panorama','× boss':'× chefe','× stage {}':'× fase {0}',
+'Victory':'Vitória','Defeat':'Derrota','Stalemate':'Empate','You retreated.':'Você recuou.',
+'You took {} habitat{}, your rival took {}.':'Você ficou com {0} {0#habitat|habitats} e seu rival com {2}.',' You lose a life ({} left).':' Você perde uma vida ({0} {0#restante|restantes}).',' The boss is still waiting.':' O chefe continua esperando.',
+'+{} coins{}':'+{0} {0#moeda|moedas}{1}','· +{} interest':'· +{0} de juros','reached level {}: {}':'chegou ao nível {0}: {1}','See results':'Ver resultados','Continue':'Continuar',
+'Apex Summit cleared':'Cume dos Predadores conquistado','You beat the run':'Você venceu a expedição','Score {} · {} wins · {} {} left':'Pontos {0} · {1} vitórias · {2} {2#vida restante|vidas restantes}',
+'Keep going into endless stages for a higher score. Rivals get stronger every stage.':'Siga para as fases infinitas e pontue mais. Os rivais ficam mais fortes a cada fase.','Keep going':'Continuar jogando',
+'Run complete':'Expedição concluída','Out of lives':'Sem vidas','New best score.':'Novo recorde.','{}Reached stage {}{} · {} of {} battles won':'{0}Chegou à fase {1}{2} · {3} de {4} batalhas vencidas','(endless)':'(infinito)',
+'Discovered this run':'Descobertos nesta expedição','In your run deck':'No seu deck da expedição','Release it to make your deck smaller and more consistent.':'Libere para deixar seu deck menor e mais consistente.','Release · 2':'Liberar · 2',
+'Your run deck needs at least 6 cards.':'Seu deck precisa de pelo menos 6 cartas.','{} released.':'{0} liberado.','Every animal is discovered.':'Todos os animais foram descobertos.','+20 XP on every discovered card.':'+20 XP em todas as cartas descobertas.',
+'{} get +{} here as natives. Each side holds {} cards.':'{0} ganham +{1} aqui como nativos. Cada lado comporta {2} cartas.',
+'Language':'Idioma'
+};
+const TRX=new Map(), TRP=[];
+if(PT){ for(const [k,v] of Object.entries(TR_PT)){ if(k.includes('{}')){ const lits=k.split('{}'); TRP.push({lits,out:v,lit:lits.join('').length,weak:!/[A-Za-z]/.test(lits.join(''))}); } TRX.set(k,v); }
+  TRP.sort((a,b)=>b.lit-a.lit); }   // most specific patterns first
+/* match "a{}b{}c" against s by finding the literal pieces in order (no regex backtracking blow-ups) */
+function trMatch(lits,s){ const n=lits.length-1, first=lits[0], last=lits[n];
+  if(!s.startsWith(first)||!s.endsWith(last)||s.length<first.length+last.length) return null;
+  for(let i=1;i<n;i++) if(!s.includes(lits[i])) return null;
+  const end=s.length-last.length, caps=[];
+  const go=(pos,i)=>{ if(i===n){ caps.push(s.slice(pos,end)); return true; }
+    let at=s.indexOf(lits[i],pos), tries=0;
+    while(at>=0&&at+lits[i].length<=end&&tries++<6){ caps.push(s.slice(pos,at)); if(go(at+lits[i].length,i+1)) return true; caps.pop(); at=s.indexOf(lits[i],at+1); }
+    return false; };
+  return go(first.length,1)?caps:null; }
+function trFill(out,caps){ return out.replace(/\{(\d+)(?:([#?])([^|}]*)\|([^}]*))?\}/g,(m,i,op,a,b)=>{ const c=caps[+i]??''; if(!op) return c;
+  if(op==='#') return parseFloat(String(c).replace(/[^\d.-]/g,''))===1?a:b; return c.trim()?a:b; }); }
+function trCore(s,depth,weak){ const ex=TRX.get(s); if(ex!=null) return ex; if(depth>2||!/[A-Za-z]/.test(s)) return s;
+  for(const p of TRP){ if(p.weak&&!weak) continue; const m=trMatch(p.lits,s); if(m) return trFill(p.out,m.map(c=>trWrap(c,depth+1))); } return s; }
+function trWrap(raw,depth,weak){ const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(raw); const core=m[2].replace(/\s+/g,' '); if(!core) return raw; const o=trCore(core,depth,weak); return o===core?raw:m[1]+o+m[3]; }
+const TRC=new Map();
+function trText(raw){ if(!PT||!/[A-Za-z]/.test(raw)) return raw; let o=TRC.get(raw); if(o===undefined){ o=trWrap(raw,0); if(TRC.size<5000) TRC.set(raw,o); } return o; }
+const trLog=m=>PT?trWrap(m,0,true):m;   // battle log lines: also allow the punctuation-only patterns
+/* L(): translate a template in code. Keys use {} for each value, in order. */
+function L(k,...a){ const v=PT?TRX.get(k):null; if(v==null){ let i=0; return k.replace(/\{\}/g,()=>a[i++]??''); } return trFill(v,a.map(x=>typeof x==='string'?trWrap(x,1):String(x))); }
+/* translate the page as it changes; card faces are built in Portuguese already and skipped */
+const TR_SKIP='.cardbox,textarea,script,style,[data-notr]';
+const TR_DONE=new WeakMap();
+function trNode(n){ if(TR_DONE.get(n)===n.data) return; const p=n.parentElement; if(!p||p.closest(TR_SKIP)) return; const t=trText(n.data); TR_DONE.set(n,t); if(t!==n.data) n.data=t; }
+const TR_ADONE=new WeakMap();
+function trEl(el){ let d=TR_ADONE.get(el); for(const a of ['title','aria-label','placeholder']){ const v=el.getAttribute(a); if(v&&!(d&&d[a]===v)){ const t=trText(v); if(!d){ d={}; TR_ADONE.set(el,d); } d[a]=t; if(t!==v) el.setAttribute(a,t); } } }
+function trTree(root){ if(root.nodeType===3){ trNode(root); return; } if(root.nodeType!==1||root.closest(TR_SKIP)) return; trEl(root);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT,{acceptNode:n=>n.nodeType===1&&n.matches(TR_SKIP)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  for(let n=w.nextNode();n;n=w.nextNode()){ if(n.nodeType===3) trNode(n); else trEl(n); } }
+if(PT){ const mo=new MutationObserver(ms=>{ for(const m of ms){ if(m.type==='characterData') trNode(m.target); else if(m.type==='attributes') trEl(m.target); else m.addedNodes.forEach(trTree); } });
+  const start=()=>{ trTree(document.body); mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['title','aria-label','placeholder']}); };
+  document.body?start():addEventListener('DOMContentLoaded',start); }
+
+/* ---- card data in Portuguese ---- */
+const AB_EN={}; for(const k in AB) AB_EN[k]={nm:AB[k].nm,t:AB[k].t};
+const PT_FEM=new Set(['bee','gazelle','zebra','macaw','owl','arcticfox','leafcutter','capybara','squid','seaturtle','giraffe','dartfrog','monarch','harpy','leopardseal','orca','bluewhale','hyena','anaconda','worker','lioness']);
+const PT_PL={worker:'Operárias',foal:'Filhotes de zebra',wolfpup:'Filhotes de lobo',dog:'Cães-selvagens',calf:'Filhotes de golfinho',locusts:'Gafanhotos',lioness:'Leoas',oxpecker:'Pica-bois'};
+const PT_NAME2ID={};
+const ptArt=id=>PT_FEM.has(id)?'uma':'um';
+function ptPlural(n,w){ const id=PT_NAME2ID[w]; return n===1?`${ptArt(id)} ${w}`:`${n} ${PT_PL[id]||w}`; }
+const PT_ABN={'Swarm':'Enxame','Pronk':'Pinote','Dawn Dabbler':'Madrugador','Hop':'Salto','Spiny':'Espinhos','Pinch':'Pinça','Dazzle':'Deslumbre','Pack Hunt':'Caça em Bando','Flamboyance':'Exuberância',
+  'Mimic Call':'Imitação','Stink':'Fedor','Hakuna Matata':'Hakuna Matata','Night Hunter':'Caçador Noturno','Kick':'Coice','Forest Giant':'Gigante da Floresta','Winter Coat':'Pelagem de Inverno','Snow Pounce':'Bote na Neve',
+  'Spray':'Jato','Sleepy':'Sonolento','Anemone Host':'Anêmona','Finding Dory':'Procurando Dory','Friendly':'Amigável','Mate for Life':'Par para a Vida','Pod':'Grupo','Ink Cloud':'Nuvem de Tinta','Ride the Current':'Na Corrente',
+  'Caravan':'Caravana','Lookout':'Vigia','Relay Hunt':'Caça em Revezamento','Toxic Skin':'Pele Tóxica','Colour Shift':'Muda de Cor','Slow Living':'Vida Lenta','Toxic':'Tóxica','Territorial Charge':'Investida Territorial',
+  'Tool User':'Usa Ferramentas','Sprint':'Arrancada','Dive':'Mergulho','Oxpecker':'Pica-boi','Pride':'Alcateia','Silverback':'Costas-prateadas','Ghost of the Mountains':'Fantasma das Montanhas','Ice Ambush':'Emboscada no Gelo',
+  'Hibernate':'Hibernar','Hypnotic Coil':'Abraço Hipnótico','Matriarch':'Matriarca','Herd Call':'Chamado da Manada','Stalk':'Espreita','Pod Hunt':'Caça em Grupo','Whale Song':'Canto da Baleia','Out of Place':'Fora de Lugar',
+  'Death Roll':'Giro da Morte','Forgetful':'Esquecida','Just Keep Swimming':'Continue a Nadar','Slippery':'Escorregadio','Chase':'Perseguição','Inner Peace':'Paz Interior','Steal the Kill':'Roubar a Caça','Laughing Clan':'Clã Risonho'};
+const PT_CLS_A={I:'um Invertebrado',B:'uma Ave',M:'um Mamífero',R:'um Réptil',A:'um Anfíbio',F:'um Peixe'};
+const PT_BIO_IN={SAV:'da Savana',RAIN:'da Selva',OCN:'do Oceano',TUN:'da Tundra',DES:'do Deserto',FOR:'da Floresta',WET:'do Pântano'};
+if(PT){
+  const R='Ao revelar:';
+  const P={
+    HERD:['Manada',a=>`+${a.n} para cada outro Herbívoro seu aqui.`], PACKPOW:['Tática de Bando',a=>`+${a.n} para cada outro animal de Bando seu aqui.`],
+    COLONY:['Colônia',a=>`+${a.n} para cada outro Invertebrado seu aqui.`], FLOCK:['Revoada',a=>`+${a.n} para cada outra Ave sua aqui.`],
+    HUDDLE:['Aconchego',a=>`+${a.n} para cada outro animal da Tundra seu aqui.`], ALPHA:['Líder',a=>`Suas outras cartas aqui ganham +${a.n}.`],
+    NOCT:['Noturno',a=>`+${a.n} se jogado no turno 5 ou 6 (à noite).`], SCAV:['Carniceiro',a=>`+${a.n} para cada carta destruída nesta partida.`],
+    TERR:['Territorial',a=>`+${a.n} enquanto for sua única carta aqui.`], SYMB:['Simbiose',a=>`+${a.n} enquanto você tiver ${PT_CLS_A[a.x]} aqui.`],
+    ENDURE:['Resistência',a=>`+1 por turno desde que foi jogado, até +${a.n}.`], FEARLESS:['Destemido',a=>`+${a.n} enquanto um inimigo aqui tiver mais poder.`],
+    CAMO:['Camuflagem',()=>`Habilidades inimigas não o afetam.`], ARMOR:['Couraça',()=>`Não pode ser destruído.`],
+    POLAR:['Adaptado ao Gelo',a=>`+${a.n} a mais em habitats de Tundra.`], COLOSSAL:['Colossal',()=>`Você não pode jogar mais cartas aqui.`],
+    SUMMON:['Invocar',a=>`${R} invoca ${ptPlural(a.n,DB[a.x].name)} (${DB[a.x].pow}) aqui.`],
+    VENOM:['Veneno',a=>`${R} o inimigo mais forte aqui recebe −${a.n}.`], SHOCK:['Intimidar',a=>`${R} todos os inimigos aqui recebem −${a.n}.`],
+    APEX:['Predador',a=>a.n>1?`${R} destrói os ${a.n} inimigos mais fracos aqui.`:`${R} destrói o inimigo mais fraco aqui.`],
+    FRENZY:['Frenesi',a=>`${R} destrói o inimigo mais fraco aqui. Se destruir, +${a.n}.`], PUNCH:['Golpe',a=>`${R} destrói um inimigo aqui com ${a.n} de poder ou menos.`],
+    AMBUSH:['Emboscada',()=>`${R} destrói o inimigo mais forte aqui com menos poder que este.`], DRAW:['Vigia',a=>a.n>1?`${R} compra ${a.n} cartas.`:`${R} compra uma carta.`],
+    MIGRATE:['Migrar',a=>`${R} vai para o habitat onde você está mais atrás e ganha +${a.n}.`], MIMIC:['Imitar',()=>`${R} copia o poder da outra carta mais forte aqui.`],
+    RALLY:['Alarme',a=>`${R} suas outras cartas aqui ganham +${a.n}.`], EARLY:['Madrugador',a=>`+${a.n} se jogado nos turnos 1–3.`],
+    SWIFT:['Veloz',()=>`Revela antes das outras cartas no turno, com ou sem prioridade.`], LURK:['Espreita',()=>`Revela depois das outras cartas no turno.`],
+    FIRST:['Largada',a=>`${R} +${a.n} se ainda não houver cartas inimigas aqui.`], HOARD:['Estoque',a=>`${R} você ganha +${a.n} de energia no próximo turno.`],
+    ENCORE:['Bis',()=>`${R} suas outras cartas aqui ativam o “ao revelar” de novo.`], CHATTER:['Imitação',()=>`${R} repete o “ao revelar” da carta que você jogou logo antes desta.`],
+    BUDDY:['Melhores Amigos',a=>`+${a.n} enquanto você tiver ${DB[a.x]?ptArt(a.x)+' '+DB[a.x].name:'seu amigo'} aqui.`],
+    LOST:['Fora de Lugar',(a,d)=>`+${a.n} enquanto estiver fora ${d?PT_BIO_IN[d.bio]:'de casa'}.`], HOME:['Território',(a,d)=>`+${a.n} a mais em habitats ${d?PT_BIO_IN[d.bio]:'de casa'}.`],
+    FLEE:['Escorregadio',a=>`Quando um felino é jogado aqui, foge para o seu habitat mais fraco e ganha +${a.n}.`],
+    CURRENT:['Na Corrente',()=>`${R} seus Peixes em outros habitats nadam até aqui e ganham +1.`], STAMPEDE:['Estouro',()=>`${R} empurra o inimigo mais fraco aqui para outro habitat.`],
+    PUSH:['Coice',a=>`${R} empurra o inimigo mais forte aqui com ${a.n} de poder ou menos para outro habitat.`], SENTRY:['Sentinela',a=>`Quando uma carta inimiga é revelada aqui, ela recebe −${a.n}.`],
+    DRAIN:['Drenar',a=>`${R} tira ${a.n} de poder do inimigo mais forte aqui.`], SONG:['Canto',a=>`${R} todas as suas outras cartas ganham +${a.n}.`],
+    CULL:['Caça em Grupo',a=>`${R} destrói os inimigos aqui com ${a.n} de poder ou menos.`], GUARD:['Protetor',()=>`Suas outras cartas aqui não podem ser destruídas.`],
+    FRIENDS:['Peixes São Amigos',()=>`Nunca destrói Peixes.`], WANDER:['Esquecida',()=>`${R} vaga até outro habitat aleatório.`],
+    PAIR:['Par para a Vida',a=>`+${a.n} enquanto você tiver exatamente uma outra carta aqui.`], FLOCKALL:['Exuberância',a=>`+${a.n} para cada outra Ave sua em qualquer lugar.`],
+    ADAPT:['Muda de Cor',()=>`Recebe o dobro do bônus ou da penalidade do habitat.`], SOLO:['Paz Interior',a=>`Se for a única carta que você jogou no turno, +${a.n}.`],
+    CARAVAN:['Caravana',a=>`No fim de cada turno, suas outras cartas aqui ganham +${a.n}.`],
+    STEAL:['Roubar a Caça',a=>`${R} tira ${a.n} de poder do inimigo mais forte aqui (${a.n*2} se for um felino).`],
+    CLAN:['Clã Risonho',a=>`+${a.n} para cada outro Carnívoro seu aqui, e +${a.n} a mais para cada carta destruída aqui nesta partida.`]
+  };
+  for(const k in P){ if(AB[k]){ AB[k].nm=P[k][0]; AB[k].t=P[k][1]; } }
+  Object.assign(BIO.SAV,{n:'Savana'}); Object.assign(BIO.RAIN,{n:'Selva'}); Object.assign(BIO.OCN,{n:'Oceano'}); Object.assign(BIO.TUN,{n:'Tundra'});
+  Object.assign(BIO.DES,{n:'Deserto'}); Object.assign(BIO.FOR,{n:'Floresta'}); Object.assign(BIO.WET,{n:'Pântano'});
+  Object.assign(CLS,{M:'Mamífero',B:'Ave',R:'Réptil',A:'Anfíbio',F:'Peixe',I:'Invertebrado'});
+  Object.assign(DIET,{H:'Herbívoro',C:'Carnívoro',O:'Onívoro'});
+  Object.assign(IUCN,{CR:'Criticamente em Perigo',EN:'Em Perigo',VU:'Vulnerável',NT:'Quase Ameaçada',LC:'Pouco Preocupante',DD:'Dados Insuficientes',NE:'Não Avaliada'});
+  ['Quintal','Campo','Avistamento Raro','Esquivo','Lendário'].forEach((n,i)=>TIERS[i+1].n=n);
+  ['Grafite','Prata','Ouro','Arco-íris','Plasma','Neon'].forEach((n,i)=>FINS[i].n=n);
+  ['Padrão','Carmim','Cobalto','Jade','Violeta','Brasa','Rosa','Amarelo','Ônix'].forEach((n,i)=>BCOLORS[i].n=n);
+  [['Padrão','Impressão simples.'],['Foil','Foil arco-íris que corre pela carta quando você a inclina.'],['Prisma','Facetas que captam, cada uma, uma cor diferente da luz.'],
+   ['Ouro Maciço','A carta inteira é impressa em ouro, com brilho escovado.'],['P&B','Impressão fosca em preto e branco, com verniz brilhante no animal.']].forEach(([n,d],i)=>{ FINISHES[i].n=n; FINISHES[i].d=d; });
+  ['Borda cinza padrão.','Borda de prata escovada com relevo.','Borda dourada com relevo.','Borda arco-íris animada e habitat vivo.','Borda de plasma com energia girando devagar.','Borda de neon com brilho forte.'].forEach((t,i)=>FIN_DESC[i]=t);
+  ['Base','Variante 1','Variante 2','Variante 3'].forEach((n,i)=>VARS[i].n=n);
+  Object.assign(FLAVOR,{warthog:'Ajoelha-se sobre os pulsos acolchoados para pastar a grama mais curta.',moose:'O maior cervo do mundo. Mergulha até 6 m atrás de plantas aquáticas.',
+    worker:'Invocada pela Abelha.',foal:'Invocado pela Zebra.',wolfpup:'Invocado pelo Lobo-cinzento.',dog:'Invocado pelo Cão-selvagem-africano.',calf:'Invocado pelo Golfinho.',
+    locusts:'Invocado pelo Gafanhoto-do-deserto.',lioness:'Invocada pelo Leão. Faz a maior parte das caçadas do bando.',oxpecker:'Invocado pelo Rinoceronte-negro. Tira carrapatos do couro dele.'});
+}
+
 
 const DB = {}, SET = [];
 RAW.trim().split('\n').forEach(line=>{
@@ -793,7 +1013,7 @@ RAW.trim().split('\n').forEach(line=>{
 });
 const D = c => DB[c.id];
 const has = (d,k) => d.abs.some(a=>a.k===k);
-const abName = a => a.nm || AB[a.k].nm;
+const abName = a => (PT&&a.nm&&PT_ABN[a.nm]) || a.nm || AB[a.k].nm;
 const isPack = d => PACKSET.has(d.id);
 
 /* =====================================================================
@@ -1382,15 +1602,15 @@ function makeHalftone(url,mode,layer){ return new Promise((res,rej)=>{ const img
   if(layer==='fg'){ o.globalCompositeOperation='destination-in'; o.drawImage(img,0,0,W,H); }
   res(out.toDataURL(layer==='bg'?'image/jpeg':'image/png',.9)); }; img.onerror=rej; img.src=url; }); }
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-function abText(d){ if(!d.abs.length) return `<p><i>${esc(FLAVOR[d.id]||'No ability.')}</i></p>`; return d.abs.map(a=>`<p><b>${abName(a)}</b> ${AB[a.k].t(a,d)}</p>`).join(''); }
+function abText(d){ if(!d.abs.length) return `<p><i>${esc(FLAVOR[d.id]||L('No ability.'))}</i></p>`; return d.abs.map(a=>`<p><b>${abName(a)}</b> ${AB[a.k].t(a,d)}</p>`).join(''); }
 function cardHTML(id,o={}){
   const d=DB[id], v=o.v||'field', f=o.f||0, fn=o.fn||'none', bc=o.bc||'default', art=artFor(id,v), hm=fn==='ht'?'c':fn==='htbw'?'k':null, BG=hm?htSrc(art.bg,hm,'bg'):art.bg, FG=art.fg&&hm?htSrc(art.fg,hm,'fg'):art.fg;
-  return `<div class="cardbox"><div class="card f${f} fn-${fn} bc-${bc}${art.bleed?' bl':''}" style="--bc:${BIO[d.bio].c}">
+  return `<div class="cardbox"><div class="card f${f} fn-${fn} bc-${bc}${art.bleed?' bl':''}" style="--bc:${BIO[d.bio].c}${PT&&PT_FS[id]?`;--nmS:${PT_FS[id][0]};--txS:${PT_FS[id][1]};--sbS:${PT_FS[id][2]}`:''}">
     <div class="art"><div class="bgw"><img class="bg" src="${BG}" ${hm?`data-ht="${hm}|bg|${esc(art.bg)}"`:''} alt="" draggable="false"></div></div>
     <div class="frame">${f===4?'<i class="pl"></i><i class="pl b"></i><i class="pl c"></i>':''}</div>
     ${fn!=='none'?'<div class="fin"></div>':''}
     ${art.fg?`<div class="fgw"><div class="fgi" style="--fgm2:url('${art.fg}')"><img src="${FG}" ${hm?`data-ht="${hm}|fg|${esc(art.fg)}"`:''} alt="${esc(d.name)}" draggable="false">${fn!=='none'?`<div class="finfg" style="--fgm:url('${art.fg}')"></div>`:''}</div></div>`:''}
-    <div class="plate"><div class="nm">${esc(d.name)}</div><div class="sub"><i></i>${CLS[d.cls]} · ${BIO[d.bio].n}${isPack(d)?' · Pack':''}</div><div class="txt">${abText(d)}</div></div>
+    <div class="plate"><div class="nm">${esc(d.name)}</div><div class="sub"><i></i>${CLS[d.cls]} · ${BIO[d.bio].n}${isPack(d)?' · '+L('Pack'):''}</div><div class="txt">${abText(d)}</div></div>
     <div class="glare"></div>
     <div class="cost"><b>${d.cost}</b></div><div class="pw"><b>${o.pow??d.pow}</b></div>
   </div></div>`;
@@ -1422,7 +1642,7 @@ const levelOf = c => { let l=1; for(let i=1;i<LV.length;i++) if(c.xp>=LV[i]) l=i
 function unlocked(c){ const lv=levelOf(c), u={b:0,fn:new Set(['none']),v:new Set(['field']),c:false};
   for(let l=2;l<=lv;l++) for(const [k,x] of (UNLOCKS[l]||[])){ if(k==='soon') continue; if(k==='b') u.b=Math.max(u.b,x); else if(k==='c') u.c=true; else u[k].add(x); }
   return u; }
-function unlockText(l){ return (UNLOCKS[l]||[]).map(([k,x])=>k==='soon'?'picture variants (coming soon)':k==='b'?`${FINS[x].n} border`:k==='c'?'border colours':k==='fn'?`${FINISHES.find(f=>f.k===x).n} finish`:`${VARS.find(v=>v.k===x).n} art`).join(', '); }
+function unlockText(l){ return (UNLOCKS[l]||[]).map(([k,x])=>k==='soon'?L('picture variants (coming soon)'):k==='b'?L('{} border',FINS[x].n):k==='c'?L('border colours'):k==='fn'?L('{} finish',FINISHES.find(f=>f.k===x).n):L('{} art',VARS.find(v=>v.k===x).n)).join(', '); }
 function clampLook(c){ const u=unlocked(c); if(c.f>u.b) c.f=u.b; if(!u.fn.has(c.fn)) c.fn='none'; if(!u.v.has(c.v)) c.v='field'; if(!u.c) c.bc='default'; }
 function gainXP(id,n){ const c=SV.cards[id]; if(!c) return null; const before=levelOf(c); c.xp+=n; const after=levelOf(c); return after>before?after:null; }
 
@@ -1600,7 +1820,7 @@ function vLobby(){
     <div class="hero"><div class="kicker">WildCards</div><h1 style="margin-top:6px">Start an expedition</h1>
       <p class="lede">Cross three biomes. Win battles, shop between them, and build your deck as you go. Beat the final boss in about 15 minutes, then keep going for a high score.</p>
       <div class="row" style="margin-top:16px"><button class="btn amber" data-act="newrun">New run</button><button class="btn ghost" data-act="howto">How to play</button><button class="btn ghost" data-act="savecode">Save code</button></div></div>
-    <div class="stats"><div><b>${SV.best.score.toLocaleString('en-US')}</b>Best score</div><div><b>${SV.best.ante||'—'}</b>Best stage</div><div><b>${SV.runs}</b>Runs</div><div><b>${disc}/${SET.length}</b>Discovered</div></div>
+    <div class="stats"><div><b>${SV.best.score.toLocaleString(NUMLOC)}</b>Best score</div><div><b>${SV.best.ante||'—'}</b>Best stage</div><div><b>${SV.runs}</b>Runs</div><div><b>${disc}/${SET.length}</b>Discovered</div></div>
     <div class="card-s row between"><div><h3>Testing</h3><p class="small" style="margin:2px 0 0">Shortcuts for checking art and cosmetics.</p></div><div class="row"><button class="btn ghost sm" data-act="discoverall">Discover all</button><button class="btn ghost sm" data-act="xpall">+20 XP to all</button></div></div>
   </div>`;
 }
@@ -1633,7 +1853,7 @@ let SAVE_PENDING=null;
 async function loadSaveCode(btn){
   const msg=$('#smsg'), txt=$('#sload').value;
   if(!SAVE_PENDING){ try{ SAVE_PENDING=await readSaveCode(txt); }catch(e){ msg.textContent=e.message==='old'?'This device is too old to read that code.':'That code doesn\'t look right. Copy the whole thing, starting with WC.'; return; }
-    const n=Object.keys(SAVE_PENDING.cards).length; msg.innerHTML=`Found ${n} animals and a best score of ${(SAVE_PENDING.best.score||0).toLocaleString('en-US')}. <b>Tap again to replace this device's progress.</b>`; btn.textContent='Replace my progress'; btn.classList.add('amber'); return; }
+    const n=Object.keys(SAVE_PENDING.cards).length; msg.innerHTML=`Found ${n} animals and a best score of ${(SAVE_PENDING.best.score||0).toLocaleString(NUMLOC)}. <b>Tap again to replace this device's progress.</b>`; btn.textContent='Replace my progress'; btn.classList.add('amber'); return; }
   SV=SAVE_PENDING; SAVE_PENDING=null; save(); zclose(); UI.tab='play'; render(); toast('Progress loaded.');
 }
 function howTo(){ showSheet(`<div class="card-s"><h2>How a run works</h2><ol class="how">
@@ -1664,10 +1884,10 @@ function vCamp(){
       <div class="row between" style="margin-top:8px"><span class="small">Tap a card to release it (2 coins) · Battles won ${r.wins}/${r.battles}</span><button class="btn ghost sm" data-act="abandon">${UI.armed==='abandon'?'Tap again to end the run':'End run'}</button></div>`;
   }
   return `<div class="page camp">
-    <div class="hud"><div><span class="kicker">${r.endless?'Endless · ':''}Stage ${r.ante}</span><b>${cfg.final?'Apex Summit':BIO[bio].n}</b></div><div class="hearts" title="${r.lives} lives">${hearts(r.lives)}</div><div><span class="kicker">Score</span><b>${r.score.toLocaleString('en-US')}</b></div></div>
+    <div class="hud"><div><span class="kicker">${r.endless?'Endless · ':''}Stage ${r.ante}</span><b>${cfg.final?'Apex Summit':BIO[bio].n}</b></div><div class="hearts" title="${r.lives} lives">${hearts(r.lives)}</div><div><span class="kicker">Score</span><b>${r.score.toLocaleString(NUMLOC)}</b></div></div>
     <div class="trail">${nodes}</div>
-    <div class="next card-s"><div class="nx-main"><div class="kicker">${cfg.final?'Final boss':cfg.boss?'Boss battle':'Next battle'} · ${esc(cfg.rival)}</div><h2>${esc(cfg.name)} <span class="sty">${STYLEK[cfg.style].n}</span></h2>
-      <p class="small nx-d">${esc(cfg.themeDesc)} ${esc(STYLEK[cfg.style].d)}${cfg.mod?` <b style="color:var(--coral)">${BOSSK[cfg.mod].n}</b>: ${BOSSK[cfg.mod].d}`:''}${cfg.oBuff?` Rival cards +${cfg.oBuff} power.`:''}</p></div>
+    <div class="next card-s"><div class="nx-main"><div class="kicker">${L(cfg.final?'Final boss':cfg.boss?'Boss battle':'Next battle')} · ${esc(cfg.rival)}</div><h2>${esc(cfg.name)} <span class="sty">${STYLEK[cfg.style].n}</span></h2>
+      <p class="small nx-d">${esc(cfg.themeDesc)} ${esc(STYLEK[cfg.style].d)}${cfg.mod?` <b style="color:var(--coral)">${BOSSK[cfg.mod].n}</b>: ${BOSSK[cfg.mod].d}`:''}${cfg.oBuff?' '+L('Rival cards +{} power.',cfg.oBuff):''}</p></div>
       <div class="scout">${cfg.scout.map(id=>`<button class="cell" data-act="peek" data-id="${id}" aria-label="${esc(DB[id].name)}">${cardHTML(id,{})}</button>`).join('')}<span class="small">+${cfg.deck.length-cfg.scout.length}</span></div>
       <button class="btn amber" data-act="fight">Start battle</button></div>
     <div class="row between ctabs"><div class="seg">${[['shop','Shop'],['gear',`Gear ${r.gear.length}/5`],['deck',`Deck ${r.deck.length}`]].map(([k,n])=>`<button data-act="ctab" data-k="${k}" aria-pressed="${tab===k}">${n}</button>`).join('')}</div>
@@ -1700,7 +1920,7 @@ function infoCol(id,extra){
   const d=DB[id], c=SV.cards[id];
   const top=`<div class="card-s"><div class="kicker">Tier ${ROMAN[d.tier]} · ${TIERS[d.tier]?.n||'Token'}</div><h2 style="margin-top:4px">${esc(d.name)}</h2>
     <div class="abl">${abText(d)}</div>
-    <div class="meta"><div>Class<b>${CLS[d.cls]}${isPack(d)?' · Pack':''}</b></div><div>Habitat<b>${BIO[d.bio].n}</b></div><div>Diet<b>${DIET[d.diet]}</b></div><div>Status<b>${IUCN[d.iucn]}</b></div><div>Weight<b>${d.wt}</b></div><div>Top speed<b>${d.spd}</b></div></div></div>`;
+    <div class="meta"><div>Class<b>${CLS[d.cls]}${isPack(d)?' · '+L('Pack'):''}</b></div><div>Habitat<b>${BIO[d.bio].n}</b></div><div>Diet<b>${DIET[d.diet]}</b></div><div>Status<b>${IUCN[d.iucn]}</b></div><div>Weight<b>${d.wt}</b></div><div>Top speed<b>${d.spd}</b></div></div></div>`;
   if(!c) return extra||'';
   const lv=levelOf(c), u=unlocked(c), nx=LV[lv];
   const pct=nx?Math.min(100,(c.xp-LV[lv-1])/(nx-LV[lv-1])*100):100;
@@ -1771,7 +1991,7 @@ const BIOART={SAV:'lion',RAIN:'macaw',OCN:'orca',TUN:'polarbear',DES:'camel',FOR
 function packSkin(p){
   if(p.k==='field') return {k:'field',n:'Field Pack',sub:'Pick 1 of 3, any biome',p1:'#b85f1a',p2:'#ffb547',art:['lion','field'],label:'FIELD'};
   if(p.k==='gear') return {k:'gear',n:'Gear Crate',sub:'Pick 1 of 2 Field Gear',p1:'#4b5160',p2:'#c9d1de',art:['owl','field'],label:'GEAR'};
-  return {k:'biome',n:`${BIO[p.bio].n} Pack`,sub:`Pick 1 of 3 ${BIO[p.bio].n} animals`,p1:shade(BIO[p.bio].c,-.35),p2:shade(BIO[p.bio].c,.25),art:[BIOART[p.bio],'field'],label:BIO[p.bio].n.toUpperCase()};
+  return {k:'biome',n:PT?`Pacote ${PT_BIO_IN[p.bio]}`:`${BIO[p.bio].n} Pack`,sub:PT?`Escolha 1 de 3 animais ${PT_BIO_IN[p.bio]}`:`Pick 1 of 3 ${BIO[p.bio].n} animals`,p1:shade(BIO[p.bio].c,-.35),p2:shade(BIO[p.bio].c,.25),art:[BIOART[p.bio],'field'],label:BIO[p.bio].n.toUpperCase()};
 }
 function pouchHTML(s){ return `<div class="pouch" style="--p1:${s.p1};--p2:${s.p2}"><div class="cap"></div><div class="body"><img src="${artFor(s.art[0],s.art[1]).bg}" alt=""><div class="logo">WILDCARDS</div><div class="set">${s.label}</div><div class="cnt"><b>${s.k==="gear"?2:3}</b>${s.k==="gear"?"ITEMS":"CARDS"} · PICK 1</div><i class="shine"></i></div><div class="crimp"></div><div class="seam"></div></div>`; }
 function rollPackCards(p){
@@ -2023,6 +2243,57 @@ const LOCS = {
   flyway:{n:'Migration Flyway',b:'WET',t:'Cards that move here get +2.',mod:()=>0,flyway:true}
 };
 const LOCS_BY={}; Object.entries(LOCS).forEach(([k,l])=>(LOCS_BY[l.b]=LOCS_BY[l.b]||[]).push(k));
+const PT_FS={"gazelle":[1.0,0.98,1.0],"jerboa":[1.0,0.98,1.0],"swan":[1.0,0.94,1.0],"dartfrog":[1.0,0.96,1.0],"cheetah":[1.0,0.98,1.0],"gorilla":[1.0,0.88,1.0],"elephant":[1.0,0.92,1.0],"orca":[1.0,0.9,1.0],"housecat":[1.0,0.94,1.0],"dog":[1.0,0.94,1.0],"locusts":[1.0,0.96,1.0]};
+/* ---- Portuguese names for cards, habitats, gear and rivals (needs everything above) ---- */
+const PT_NAMES={bee:'Abelha',gazelle:'Gazela-de-thomson',mallard:'Pato-real',jerboa:'Jerboa-orelhudo',thornydevil:'Diabo-espinhoso',crab:'Caranguejo-real',zebra:'Zebra',wolf:'Lobo-cinzento',
+  penguin:'Pinguim-imperador',flamingo:'Flamingo',macaw:'Araracanga',warthog:'Javali-africano',owl:'Coruja-das-torres',kangaroo:'Canguru-vermelho',bison:'Bisão-americano',moose:'Alce',
+  arcticfox:'Raposa-do-ártico',fennec:'Feneco',raccoon:'Guaxinim',skunk:'Gambá-listrado',koala:'Coala',vampirebat:'Morcego-vampiro',leafcutter:'Formiga-cortadeira',clownfish:'Peixe-palhaço',
+  capybara:'Capivara',swan:'Cisne-mudo',dolphin:'Golfinho',squid:'Lula-de-humboldt',seaturtle:'Tartaruga-verde',puffer:'Baiacu',camel:'Dromedário',muskox:'Boi-almiscarado',
+  buffalo:'Búfalo-asiático',giraffe:'Girafa',honeybadger:'Texugo-do-mel',wilddog:'Cão-selvagem-africano',dartfrog:'Rã-dourada',chameleon:'Camaleão-pantera',sloth:'Bicho-preguiça',
+  scorpion:'Escorpião-amarelo',tern:'Trinta-réis-ártico',monarch:'Borboleta-monarca',locust:'Gafanhoto-do-deserto',peafowl:'Pavão',vulture:'Abutre-orelhudo',mantis:'Camarão-louva-a-deus',
+  sandcat:'Gato-do-deserto',hippo:'Hipopótamo',orangutan:'Orangotango',cheetah:'Guepardo',komodo:'Dragão-de-komodo',harpy:'Harpia',rhino:'Rinoceronte-negro',lion:'Leão',
+  gorilla:'Gorila-das-montanhas',snowleopard:'Leopardo-das-neves',leopardseal:'Foca-leopardo',octopus:'Polvo-mimético',shark:'Tubarão-branco',grizzly:'Urso-pardo',anaconda:'Sucuri',
+  elephant:'Elefante-africano',tiger:'Tigre-de-bengala',orca:'Orca',bluewhale:'Baleia-azul',polarbear:'Urso-polar',croc:'Crocodilo-marinho',meerkat:'Suricato',bluetang:'Cirurgião-patela',
+  mouse:'Camundongo',housecat:'Gato-doméstico',panda:'Panda-gigante',hyena:'Hiena-malhada',
+  worker:'Operária',foal:'Filhote de zebra',wolfpup:'Filhote de lobo',dog:'Cão-selvagem',calf:'Filhote de golfinho',locusts:'Gafanhoto',lioness:'Leoa',oxpecker:'Pica-boi'};
+for(const id in DB){ DB[id].nameEn=DB[id].name; if(PT&&PT_NAMES[id]) DB[id].name=PT_NAMES[id]; PT_NAME2ID[DB[id].name]=id; }
+if(PT){
+  const G1={binoculars:['Binóculo','Aves ganham +1 de poder.'],whistle:['Apito de Bando','Animais de Bando ganham +1 de poder.'],saltlick:['Pedra de Sal','Herbívoros ganham +1 de poder.'],
+    cameratrap:['Armadilha Fotográfica','Carnívoros ganham +1 de poder.'],magnifier:['Lupa','Invertebrados ganham +1 de poder.'],hatchery:['Chocadeira','Animais invocados ganham +1 de poder.'],
+    earlybird:['Madrugada','Cartas de custo 1 ganham +2 de poder.'],telephoto:['Teleobjetiva','Cartas de custo 5 ou mais ganham +2 de poder.'],fieldguide:['Guia de Campo','Animais nativos ganham +3 em vez de +2.'],
+    goggles:['Óculos Noturnos','Seus animais noturnos acordam no turno 4.'],thermos:['Garrafa Térmica','+1 de energia no turno 6.'],trailmix:['Mix de Castanhas','Compre 1 carta extra no início de cada batalha.'],
+    notebook:['Caderno de Campo','+1 no multiplicador de pontos para cada habitat vencido.'],panorama:['Panorama','×2 pontos quando você vence os três habitats.'],
+    piggy:['Cofrinho','Os juros podem chegar a 10 moedas em vez de 5.'],grant:['Bolsa de Pesquisa','+2 moedas por batalha vencida.'],coupons:['Cupons','A primeira renovação em cada loja é grátis, e as renovações custam 1 a menos.']};
+  GEAR.forEach(g=>{ if(G1[g.k]){ g.n=G1[g.k][0]; g.d=G1[g.k][1]; } });
+  const B1={drought:['Seca','Você recebe 1 de energia a menos nos turnos 1 a 3.'],earlynight:['Noite Longa','A noite cai no turno 4 para todos.'],alpha:['Rival Alfa','Seu rival ganha 1 de energia extra a cada turno.'],
+    fog:['Neblina','As cartas do rival ficam viradas até o fim da batalha.'],narrow:['Passagem Estreita','Cada lado só comporta 3 cartas por habitat.'],thick:['Couro Grosso','As cartas do rival ganham +1 de poder.']};
+  BOSSES.forEach(b=>{ if(B1[b.k]){ b.n=B1[b.k][0]; b.d=B1[b.k][1]; } });
+  Object.assign(BOSSNAME,{SAV:'Orgulho do Serengeti',RAIN:'Reis da Copa',OCN:'Águas Profundas',TUN:'Silêncio Branco',DES:'Caçadores das Dunas',FOR:'Mata Antiga',WET:'Gigantes da Várzea'});
+  ['Reconhecimento','Travessia','Chefe'].forEach((n,i)=>NODE_NAMES[i]=n);
+  const T1={birds:['Frente Emplumada','Só aves. Bandos ficam mais fortes juntos.'],scales:['Escamas & Gosma','Répteis, anfíbios e peixes.'],bugs:['Bichos Rastejantes','Insetos, caranguejos, lulas e outros invertebrados.'],
+    hunters:['Superpredadores','Só carnívoros.'],grazers:['A Grande Manada','Só herbívoros.'],omni:['Oportunistas','Onívoros que comem o que encontram.'],pack:['Mentalidade de Bando','Animais que chamam a família quando chegam.'],
+    venom:['Táticas Tóxicas','Veneno, jato, tinta e pele tóxica. Enfraquecem quem enfrentam.'],night:['Turno da Noite','Animais noturnos que crescem nos turnos 5 e 6.'],
+    tanks:['Alvos Difíceis','Couraça, camuflagem, protetores e donos de território teimosos.'],giants:['Pesos-Pesados','Nada aqui custa menos de 4.'],small:['Peixe Pequeno','Animais baratos, e muitos deles.'],
+    fast:['Velozes e Furiosos','Animais que passam de 60 km/h.'],redlist:['Lista Vermelha','Espécies vulneráveis, em perigo e criticamente em perigo.'],move:['Em Movimento','Velocistas, andarilhos e migrantes que trocam de habitat.'],
+    water:['Molhados e Selvagens','Animais do oceano e do pântano.'],numbers:['A União Faz a Força','Manadas, colônias e líderes que fortalecem uns aos outros.'],
+    friends:['Amigos Famosos','Duplas improváveis do cinema, e os gatos que as perseguem.'],tempo:['Contra o Relógio','Madrugadores, noturnos, velocistas e acumuladores de energia.']};
+  THEMES.forEach(t=>{ if(T1[t.k]){ t.n=T1[t.k][0]; t.d=T1[t.k][1]; } else if(t.home){ t.n=`Nativos ${PT_BIO_IN[t.home]}`; t.d=`Animais que vivem na ${BIO[t.home].n.toLowerCase()}.`.replace('na oceano','no oceano').replace('na deserto','no deserto').replace('na pântano','no pântano'); } });
+  const S1={bold:['Ousado','Joga o máximo que pode, o quanto antes.'],patient:['Paciente','Guarda cartas para um grande final.'],sharp:['Afiado','Raramente erra.'],
+    wild:['Selvagem','Imprevisível. Brilhante num turno, imprudente no outro.'],focused:['Focado','Concentra tudo em um habitat por vez.']};
+  STYLES.forEach(s=>{ if(S1[s.k]){ s.n=S1[s.k][0]; s.d=S1[s.k][1]; } });
+  RIVAL_ROLE.splice(0,RIVAL_ROLE.length,'Guarda-parque','Naturalista','Cinegrafista','Guia de trilhas','Especialista em zoologia','Guarda-florestal','Guia de expedição','Especialista em aves','Especialista em répteis','Especialista em vida marinha','Guia de safári','Documentarista');
+  BOSS_ROLE.splice(0,BOSS_ROLE.length,'Líder da expedição','Chefe da reserva','Lenda das trilhas','Guarda-chefe','Lenda das expedições');
+  const L1={serengeti:['Planícies do Serengeti','Herbívoros aqui ganham +1.'],ngorongoro:['Cratera de Ngorongoro','Carnívoros aqui ganham +1.'],
+    wateringhole:['Bebedouro','No fim de cada turno, a carta mais fraca aqui é destruída.'],amazon:['Dossel Amazônico','Aves e Invertebrados aqui ganham +1.'],
+    borneo:['Eco de Bornéu','Habilidades “ao revelar” aqui ativam duas vezes.'],reef:['Grande Barreira de Corais','Peixes e Invertebrados aqui ganham +1.'],
+    galapagos:['Galápagos','Aves e Répteis aqui ganham +2.'],kelp:['Floresta de Algas','Invocações aqui trazem um animal extra.'],packice:['Banquisa','Cartas que não são da Tundra aqui recebem −1.'],
+    himalaya:['Picos do Himalaia','Cartas aqui ganham +1.'],frozenlake:['Lago Congelado','Cartas aqui não podem ser destruídas nem movidas.'],
+    oasis:['Oásis','Quem estiver vencendo aqui no início de um turno ganha +1 de energia.'],kalahari:['Noite no Kalahari','Cartas noturnas aqui ganham +2.'],
+    yellowstone:['Yellowstone','A última carta revelada aqui em cada turno ganha +2.'],taiga:['Taiga Siberiana','Mamíferos aqui ganham +1.'],okavango:['Delta do Okavango','Cartas de custo 0–2 aqui ganham +1.'],
+    pantanal:['Cheias do Pantanal','Nenhuma carta pode ser jogada aqui depois do turno 4.'],flyway:['Rota Migratória','Cartas que se movem para cá ganham +2.']};
+  for(const k in L1) if(LOCS[k]){ LOCS[k].n=L1[k][0]; LOCS[k].t=L1[k][1]; }
+}
+
 
 let G=null;
 const alive = a => a.filter(c=>!c.dead);
@@ -2089,7 +2360,7 @@ function laneOf(st,side,u){ return st.lanes.findIndex(L=>L[side].some(x=>x.u===u
 function moveCard(st,side,c,from,to){ const L=st.lanes[from]; L[side]=L[side].filter(x=>x.u!==c.u); st.lanes[to][side].push(c); if(LOCS[st.lanes[to].loc].flyway) c.buff+=2; return to; }
 function pushAway(st,side,t,from){ if(!canMoveFrom(st,from)) return -1; const opts=[0,1,2].filter(j=>j!==from&&roomFor(st,j,side)); if(!opts.length) return -1; return moveCard(st,side,t,from,opts[Math.random()*opts.length|0]); }
 function reveal(st,side,c,li,log,fx){
-  const say=m=>log&&log(m), who=side==='p'?'Your':'Rival';
+  const say=m=>log&&log(trLog(m)), who=side==='p'?'Your':'Rival';
   if(!canPlay(st,li,side)){ const alt=[0,1,2].find(j=>canPlay(st,j,side)); if(alt==null){ const h=side==='p'?st.pHand:st.oHand; if(h&&h.length<7){ h.push(c); say(`${D(c).name} had no room and went back to the hand.`); } else say(`${D(c).name} found no room.`); return li; } li=alt; }
   c.t=st.turn; st.lanes[li][side].push(c);
   st.last=st.last||{}; const prevU=st.last[side]; st.last[side]=c.u;
@@ -2106,10 +2377,10 @@ function reveal(st,side,c,li,log,fx){
   return li;
 }
 function onReveal(st,side,c,li,log,fx,prevU,again){
-  const say=m=>log&&log(m), FX=(type,u,extra)=>fx&&fx.push({type,u,...extra});
+  const say=m=>log&&log(trLog(m)), FX=(type,u,extra)=>fx&&fx.push({type,u,...extra});
   const d=D(c), en=opp(side), who=side==='p'?'Your':'Rival';
   const E=()=>alive(st.lanes[li][en]), tg=()=>E().filter(e=>!has(D(e),'CAMO')), kl=()=>tg().filter(e=>canDie(st,li,en,e)&&!(has(d,'FRIENDS')&&D(e).cls==='F'));
-  const pw=(x,s)=>power(st,li,s,x), tag=again?' (again)':'';
+  const pw=(x,s)=>power(st,li,s,x), tag=again?' ('+L('again')+')':'';
   for(const a of d.abs){ const nm=abName(a)+tag;
     switch(a.k){
       case 'VENOM': { const t=maxBy(tg(),e=>pw(e,en)); if(t){ t.buff-=a.n; FX('hit',t.u); say(`${who} ${d.name} · ${nm}: ${D(t).name} −${a.n}.`);} break; }
@@ -2151,7 +2422,7 @@ function beginTurnBonus(st){
 function orderReveals(seq){ const r=x=>has(D(x.c),'SWIFT')?0:has(D(x.c),'LURK')?2:1; return seq.map((x,i)=>[x,i]).sort((a,b)=>r(a[0])-r(b[0])||a[1]-b[1]).map(x=>x[0]); }
 /* End of turn: Inner Peace, Caravan, Yellowstone, Watering Hole */
 function endOfTurn(st,log){
-  const say=m=>log&&log(m), rev=st.turnRevealed||[];
+  const say=m=>log&&log(trLog(m)), rev=st.turnRevealed||[];
   for(const side of ['p','o']){ const mine=rev.filter(r=>r.side===side); if(mine.length===1){ const li=laneOf(st,side,mine[0].u); if(li>=0){ const c=st.lanes[li][side].find(x=>x.u===mine[0].u); for(const a of D(c).abs) if(a.k==='SOLO'){ c.buff+=a.n; say(`${side==='p'?'Your':'Rival'} ${D(c).name} · ${abName(a)}: +${a.n}.`); } } } }
   st.lanes.forEach((L,li)=>{ for(const side of ['p','o']) for(const c of alive(L[side])) for(const a of D(c).abs) if(a.k==='CARAVAN'){ const al=alive(L[side]).filter(x=>x.u!==c.u); al.forEach(x=>x.buff+=a.n); if(al.length) say(`${side==='p'?'Your':'Rival'} ${D(c).name} · ${abName(a)}: allies here +${a.n}.`); } });
   st.lanes.forEach((L,li)=>{ if(!LOCS[L.loc].last) return; for(let i=rev.length-1;i>=0;i--){ const r=rev[i]; if(laneOf(st,r.side,r.u)===li){ const c=L[r.side].find(x=>x.u===r.u); c.buff+=2; say(`${LOCS[L.loc].n}: ${D(c).name} was revealed last here, +2.`); break; } } });
@@ -2218,7 +2489,7 @@ function bBuild(){
       return `<div class="lane" data-l="${li}"><div class="slots">${Array.from({length:n},(_,i)=>`<div class="anc" data-l="${li}" data-s="o" data-i="${i}"></div>`).join('')}</div>
         <div class="loc" data-act="loc" data-l="${li}"><img src="${sceneArt(loc.b,'field',L.loc)}" alt=""><span class="sc o" id="sco${li}">0</span><div class="mid"><div class="lb">${BIO[loc.b].n}</div><div class="ln">${loc.n}</div><div class="lt">${loc.t}</div></div><span class="sc p" id="scp${li}">0</span></div>
         <div class="slots">${Array.from({length:n},(_,i)=>`<div class="anc" data-l="${li}" data-s="p" data-i="${i}"></div>`).join('')}</div></div>`; }).join('')}</div>
-    <div class="info" id="binfo" aria-live="polite"></div>
+    <div class="info" id="binfo" data-notr aria-live="polite"></div>
     <div class="ctl"><div class="orb" id="borb">0</div><div class="decks" id="bdecks"></div><button class="btn endb" data-act="end" id="bend">End turn</button></div>
     <div class="hz" id="hz"></div>
     <div class="layer" id="layer"></div>
@@ -2245,7 +2516,10 @@ function bLayout(){
   const lay=$('#layer'); if(lay) lay.style.display='none';
   for(let i=0;i<10&&B.scrollHeight>B.clientHeight+1&&boardW>300;i++){ boardW=Math.max(300,boardW*.94); apply(); }
   if(lay) lay.style.display='';
+  fitLocs();
 }
+/* habitat tiles: shrink the name and rule text until they fit between the two scores */
+function fitLocs(){ document.querySelectorAll('#board .loc').forEach(l=>{ const m=l.querySelector('.mid'); if(!m) return; m.style.zoom=''; const av=l.clientHeight-56, h=m.scrollHeight; if(av>0&&h>av) m.style.zoom=Math.max(.6,av/h).toFixed(3); }); }
 const ORDER={o4:[2,3,0,1],o3:[2,0,1],p4:[0,1,2,3],p3:[0,1,2]};
 function targets(){
   const lr=$('#layer').getBoundingClientRect(), T=[];
@@ -2269,12 +2543,12 @@ function bRender(){
   if(!G) return;
   const energy=pE()-G.pq.reduce((s,q)=>s+D(q.c).cost,0);
   $('#battle').classList.toggle('night',G.turn>=G.nightAt);
-  $('#bturn').textContent=`Turn ${G.turn}/6`;
-  const bp=$('#bprio'); if(bp){ bp.textContent=G.prio==='p'?'You reveal first':'Rival reveals first'; bp.classList.toggle('mine',G.prio==='p'); }
+  $('#bturn').textContent=L('Turn {}/6',G.turn);
+  const bp=$('#bprio'); if(bp){ bp.textContent=G.prio==='p'?L('You reveal first'):L('Rival reveals first'); bp.classList.toggle('mine',G.prio==='p'); }
   const orb=$('#borb'); if(orb.textContent!=String(energy)){ orb.textContent=energy; orb.classList.remove('pop'); void orb.offsetWidth; orb.classList.add('pop'); }
-  $('#bdecks').innerHTML=`Your deck ${G.pDeck.length}<br>Rival hand ${G.oHand.length} · deck ${G.oDeck.length}`;
-  const end=$('#bend'); end.disabled=G.busy||G.over; end.textContent=G.busy?'Revealing…':G.turn===6?'Final reveal':'End turn';
-  $('#brtr').textContent=G.armed?'Tap again':'Retreat'; $('#brtr').classList.toggle('armed',G.armed);
+  $('#bdecks').innerHTML=L('Your deck {}',G.pDeck.length)+'<br>'+L('Rival hand {} · deck {}',G.oHand.length,G.oDeck.length);
+  const end=$('#bend'); end.disabled=G.busy||G.over; end.textContent=G.busy?L('Revealing…'):G.turn===6?L('Final reveal'):L('End turn');
+  $('#brtr').textContent=G.armed?L('Tap again'):L('Retreat'); $('#brtr').classList.toggle('armed',G.armed);
   $('#binfo').innerHTML='<span>'+G.msg+'</span>';
   G.lanes.forEach((L,li)=>{ const po=total(G,li,'p'), oo=total(G,li,'o');
     const hid=G.fog&&!G.over; for(const [id,v0,lead0] of [['sco'+li,oo,oo>po],['scp'+li,po,po>oo]]){ const v=hid&&id[2]==='o'?'?':v0, lead=hid?false:lead0; const e=$('#'+id); if(e.textContent!=String(v)){ e.textContent=v; e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); } e.classList.toggle('lead',lead); } });
@@ -2322,10 +2596,10 @@ function startTurn(){
   G.turn++; drawCard(G,'p'); drawCard(G,'o'); G.busy=false;
   if(G.turn>1) updPrio(G);
   beginTurnBonus(G);
-  const pr=G.prio==='p'?'You have <b>priority</b>: your cards reveal first.':'Your rival has <b>priority</b> and reveals first.';
-  G.msg = G.turn===1?`${G.prio==='p'?'Coin toss: you have <b>priority</b>.':'Coin toss: your rival has <b>priority</b>.'} Cards reveal in the order you play them.`
-    : G.turn===G.nightAt?`Night falls. ${pr}`:G.turn===6?`<b>Final turn.</b> ${pr}`:`Turn ${G.turn}. ${pr}`;
-  if(G.bonus&&G.bonus.p) G.msg+=` You have <b>+${G.bonus.p} bonus energy</b> this turn.`;
+  const pr=G.prio==='p'?L('You have <b>priority</b>: your cards reveal first.'):L('Your rival has <b>priority</b> and reveals first.');
+  G.msg = G.turn===1?L('{} Cards reveal in the order you play them.',G.prio==='p'?L('Coin toss: you have <b>priority</b>.'):L('Coin toss: your rival has <b>priority</b>.'))
+    : G.turn===G.nightAt?L('Night falls. {}',pr):G.turn===6?L('<b>Final turn.</b> {}',pr):L('Turn {}. {}',G.turn,pr);
+  if(G.bonus&&G.bonus.p) G.msg+=L(' You have <b>+{} bonus energy</b> this turn.',G.bonus.p);
   bRender(); banner(G.turn===6?'FINAL TURN':`TURN ${G.turn}`, G.turn>=G.nightAt?`Night · ${pE()} energy`:`${pE()} energy`);
 }
 
@@ -2366,13 +2640,13 @@ function onUp(e){
   if(d.hot!=null&&c){
     const hi=G.pHand.findIndex(x=>x.u===d.u); if(hi>=0) G.pHand.splice(hi,1);
     G.pq=G.pq.filter(q=>q.c.u!==d.u); G.pq.push({c,li:d.hot});
-    G.msg=`<b>${esc(D(c).name)}</b> is set at ${LOCS[G.lanes[d.hot].loc].n}. Drag it back to your hand to undo.`;
+    G.msg=L('<b>{}</b> is set at {}. Drag it back to your hand to undo.',esc(D(c).name),LOCS[G.lanes[d.hot].loc].n);
   } else if(d.pend){
     const hz=$('#hz').getBoundingClientRect();
-    if(e.clientY>hz.top-20){ G.pq=G.pq.filter(q=>q.c.u!==d.u); G.pHand.push(c); G.msg='Returned to your hand.'; }
+    if(e.clientY>hz.top-20){ G.pq=G.pq.filter(q=>q.c.u!==d.u); G.pHand.push(c); G.msg=L('Returned to your hand.'); }
   } else if(c){
     const li=laneAt(e.clientX,e.clientY);
-    if(li!=null){ const energy=pE()-G.pq.reduce((s,q)=>s+D(q.c).cost,0); G.msg = D(c).cost>energy?`${esc(D(c).name)} costs ${D(c).cost}. You have ${energy} energy left.`:`No room for you at ${LOCS[G.lanes[li].loc].n}.`; }
+    if(li!=null){ const energy=pE()-G.pq.reduce((s,q)=>s+D(q.c).cost,0); G.msg = D(c).cost>energy?L('{} costs {}. You have {} energy left.',esc(D(c).name),D(c).cost,energy):L('No room for you at {}.',LOCS[G.lanes[li].loc].n); }
   }
   bRender();
 }
@@ -2397,13 +2671,13 @@ async function endTurn(){
   const pPlays=G.pq.map(q=>({side:'p',c:q.c,li:q.li}));
   const pFirst=G.prio==='p';
   const seq=orderReveals(pFirst?[...pPlays,...oPlays]:[...oPlays,...pPlays]);
-  G.msg=(pFirst?'You have priority. Your cards reveal first, in the order you played them.':'Your rival has priority and reveals first.')+(oPlays.length?'':' Your rival holds back.');
+  G.msg=(pFirst?L('You have priority. Your cards reveal first, in the order you played them.'):L('Your rival has priority and reveals first.'))+(oPlays.length?'':L(' Your rival holds back.'));
   bRender(); await sleep(450);
   for(const st of seq){
     if(st.side==='p'){ G.pq=G.pq.filter(q=>q.c.u!==st.c.u); G.played.add(st.c.id); }
     let line=''; const fx=[];
     reveal(G,st.side,st.c,st.li,m=>{ line=line?line+' '+m:m; },fx);
-    G.msg=line?esc(line):`${st.side==='p'?'You':'Rival'} played <b>${esc(D(st.c).name)}</b>.`;
+    G.msg=line?esc(line):L('{} played <b>{}</b>.',st.side==='p'?L('You'):L('Rival'),esc(D(st.c).name));
     bRender();
     const rec=CEL.get(st.c.u); if(rec){ rec.el.classList.add('glow'); setTimeout(()=>rec.el.classList.remove('glow'),700); }
     fx.forEach(f=>{ const r=CEL.get(f.u); if(r){ r.el.classList.remove('hit'); void r.el.offsetWidth; r.el.classList.add('hit'); } });
@@ -2449,9 +2723,9 @@ function finish(forfeit){
   const title={win:'Victory',loss:'Defeat',draw:'Stalemate'}[out];
   const div=document.createElement('div'); div.className='result';
   div.innerHTML=`<div class="card-s"><div class="kicker">${esc(cfg.name)} · ${esc(cfg.rival)}</div><h2 style="margin-top:6px">${title}</h2>
-    <p class="small" style="margin:6px 0 0">${forfeit?'You retreated.':`You took ${pw} habitat${pw===1?'':'s'}, your rival took ${ow}.`}${out==='loss'?` You lose a life (${Math.max(0,r.lives)} left).`:''}${next==='retry'?' The boss is still waiting.':''}</p>
+    <p class="small" style="margin:6px 0 0">${forfeit?L('You retreated.'):L('You took {} habitat{}, your rival took {}.',pw,pw===1?'':'s',ow)}${out==='loss'?L(' You lose a life ({} left).',Math.max(0,r.lives)):''}${next==='retry'?L(' The boss is still waiting.'):''}</p>
     <div class="lres">${res.map(x=>`<div class="${x.p>x.o?'w':''}">${LOCS[x.loc].n}<b>${x.p}–${x.o}</b></div>`).join('')}</div>
-    ${out==='win'?`<table class="brk" style="margin-top:12px">${score.parts.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('')}<tr class="tot"><td>Score</td><td>+${score.total.toLocaleString('en-US')}</td></tr></table>`:''}
+    ${out==='win'?`<table class="brk" style="margin-top:12px">${score.parts.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('')}<tr class="tot"><td>Score</td><td>+${score.total.toLocaleString(NUMLOC)}</td></tr></table>`:''}
     <p style="margin:12px 0 0;font-weight:600">+${coins} coins${interest?` · +${interest} interest`:''}</p>
     ${ups.length?`<div class="ups">${ups.map(([id,l])=>`<div><b>${esc(DB[id].name)}</b> reached level ${l}: ${unlockText(l)}</div>`).join('')}</div>`:''}
     <div class="row" style="justify-content:center;margin-top:16px"><button class="btn amber" data-act="leave">${next==='over'?'See results':'Continue'}</button></div></div>`;
@@ -2463,7 +2737,7 @@ function leave(){
   const r=SV.run; if(!r){ render(); return; }
   const next=r.pending; r.pending=null;
   if(next==='over'){ endRun(false); return; }
-  if(next==='victory'){ SV.clears++; save(); render(); showSheet(`<div class="card-s" style="text-align:center"><div class="kicker">Apex Summit cleared</div><h2 style="margin-top:6px;font-size:28px">You beat the run</h2><p class="small" style="margin:8px 0 0">Score ${r.score.toLocaleString('en-US')} · ${r.wins} wins · ${r.lives} ${r.lives===1?'life':'lives'} left</p><p style="margin:12px 0 0">Keep going into endless stages for a higher score. Rivals get stronger every stage.</p></div><div class="row" style="justify-content:center"><button class="btn amber" data-act="endless">Keep going</button><button class="btn ghost" data-act="cashout">End run</button></div>`); return; }
+  if(next==='victory'){ SV.clears++; save(); render(); showSheet(`<div class="card-s" style="text-align:center"><div class="kicker">Apex Summit cleared</div><h2 style="margin-top:6px;font-size:28px">You beat the run</h2><p class="small" style="margin:8px 0 0">Score ${r.score.toLocaleString(NUMLOC)} · ${r.wins} wins · ${r.lives} ${r.lives===1?'life':'lives'} left</p><p style="margin:12px 0 0">Keep going into endless stages for a higher score. Rivals get stronger every stage.</p></div><div class="row" style="justify-content:center"><button class="btn amber" data-act="endless">Keep going</button><button class="btn ghost" data-act="cashout">End run</button></div>`); return; }
   if(next==='advance'){ r.node++; if(r.node>2){ r.node=0; r.ante++; if(r.ante>r.biomes.length){ r.biomes.push(shuffle(Object.keys(BIO))[0]); r.bosses.push(BOSSES[Math.random()*BOSSES.length|0].k); } } }
   makeShop(false); save(); render(); scrollTo(0,0);
 }
@@ -2473,7 +2747,7 @@ function endRun(won){
   if(newBest) best.score=r.score; if(r.ante>best.ante) best.ante=r.ante;
   const disc=r.discovered.slice();
   SV.run=null; save(); render();
-  showSheet(`<div class="card-s" style="text-align:center"><div class="kicker">${won?'Run complete':'Out of lives'}</div><h2 style="margin-top:6px;font-size:30px">${r.score.toLocaleString('en-US')}</h2><p class="small" style="margin:6px 0 0">${newBest?'<b style="color:var(--amber2)">New best score.</b> ':''}Reached stage ${r.ante}${r.endless?' (endless)':''} · ${r.wins} of ${r.battles} battles won</p>
+  showSheet(`<div class="card-s" style="text-align:center"><div class="kicker">${won?'Run complete':'Out of lives'}</div><h2 style="margin-top:6px;font-size:30px">${r.score.toLocaleString(NUMLOC)}</h2><p class="small" style="margin:6px 0 0">${newBest?'<b style="color:var(--amber2)">New best score.</b> ':''}Reached stage ${r.ante}${r.endless?' (endless)':''} · ${r.wins} of ${r.battles} battles won</p>
     ${disc.length?`<p style="margin:14px 0 6px">Discovered this run</p><div class="mini-grid">${disc.map(id=>cardHTML(id,SV.cards[id])).join('')}</div>`:''}</div>
     <div class="row" style="justify-content:center"><button class="btn amber" data-act="newrun">New run</button><button class="btn ghost" data-act="zclose">Close</button></div>`);
 }
@@ -2491,6 +2765,7 @@ document.addEventListener('click',e=>{
     case 'ct': UI.ct=+t.dataset.k; render(); break;
     case 'ctab': UI.camp=t.dataset.k; render(); break;
     case 'howto': howTo(); break;
+    case 'lang': setLang(PT?'en':'pt'); break;
     case 'savecode': SAVE_PENDING=null; saveCodeSheet(); break;
     case 'scopy': { const ta=$('#scode'); navigator.clipboard?.writeText(ta.value).then(()=>toast('Code copied.'),()=>{ ta.select(); toast('Select the code and copy it.'); }) ?? (ta.select(),toast('Select the code and copy it.')); break; }
     case 'sshare': navigator.share?.({title:'WildCards save',text:$('#scode').value}).catch(()=>{}); break;
@@ -2531,7 +2806,7 @@ document.addEventListener('click',e=>{
     case 'end': endTurn(); break;
     case 'retreat': if(!G||G.over||G.busy) break; if(G.armed){ G.armed=false; finish(true); } else { G.armed=true; bRender(); setTimeout(()=>{ if(G&&G.armed){ G.armed=false; bRender(); } },3000); } break;
     case 'leave': leave(); break;
-    case 'loc': { const L=LOCS[G.lanes[+t.dataset.l].loc]; showSheet(`<div class="card-s"><div class="kicker">${BIO[L.b].n} habitat</div><h2 style="margin-top:4px">${L.n}</h2><p style="margin:8px 0 0">${L.t}</p><p class="small">${BIO[L.b].n} animals get +${G.gear.includes('fieldguide')?3:2} here as natives. Each side holds ${Math.min(L.slots||4,G.narrow?3:4)} cards.</p></div><button class="btn ghost" data-act="zclose">Close</button>`); break; }
+    case 'loc': { const L=LOCS[G.lanes[+t.dataset.l].loc]; showSheet(`<div class="card-s"><div class="kicker">${PT?'Habitat '+PT_BIO_IN[L.b]:BIO[L.b].n+' habitat'}</div><h2 style="margin-top:4px">${L.n}</h2><p style="margin:8px 0 0">${L.t}</p><p class="small">${PT?'Animais '+PT_BIO_IN[L.b]:BIO[L.b].n+' animals'} get +${G.gear.includes('fieldguide')?3:2} here as natives. Each side holds ${Math.min(L.slots||4,G.narrow?3:4)} cards.</p></div><button class="btn ghost" data-act="zclose">Close</button>`); break; }
   }
 });
 document.addEventListener('change',e=>{ const t=e.target; if(t.dataset.up) onUpload(t); else if(t.dataset.bulk) onBulk(t); if(t.type==='file') t.value=''; });
