@@ -374,16 +374,16 @@ to{background-position:100% 100%,0 0}}
 .endb{height:46px;padding:0 20px;background:var(--amber);color:#1a1004}
 .hz{position:relative;height:var(--hzh,128px);flex:none}
 .layer{position:absolute;inset:0;pointer-events:none;z-index:10}
-#battle.wide .bwrap{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-rows:auto 1fr auto auto;column-gap:12px;row-gap:8px;align-items:center}
-#battle.wide .bbar,#battle.wide .board,#battle.wide .hz{grid-column:1/-1}
+#battle.wide .bwrap{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-rows:auto 1fr auto auto;column-gap:14px;row-gap:8px;align-items:center}
+#battle.wide .bbar,#battle.wide .board{grid-column:1/-1}
 #battle.wide .board{grid-row:2;align-self:center;justify-self:center}
 #battle.wide .ctl .decks{white-space:nowrap}
 #battle.wide .ctl{display:contents}
-#battle.wide .ctl .orb{grid-column:1;grid-row:3}
-#battle.wide .ctl .decks{grid-column:2;grid-row:3}
-#battle.wide .info{grid-column:3;grid-row:3;justify-content:center;text-align:center}
-#battle.wide .ctl .endb{grid-column:4;grid-row:3}
-#battle.wide .hz{grid-row:4}
+#battle.wide .info{grid-column:1/-1;grid-row:3;justify-self:center;width:min(100%,720px);justify-content:center;text-align:center}
+#battle.wide .ctl .orb{grid-column:1;grid-row:4}
+#battle.wide .ctl .decks{grid-column:2;grid-row:4}
+#battle.wide .hz{grid-column:3;grid-row:4}
+#battle.wide .ctl .endb{grid-column:4;grid-row:4}
 .tc{position:absolute;left:0;top:0;width:var(--hw);transform-origin:0 0;transition:transform .55s var(--ease),opacity .35s,filter .3s;pointer-events:auto;touch-action:none;will-change:transform;cursor:grab}
 .tc .tci{position:relative;transform-style:preserve-3d;transition:transform .6s var(--ease)}
 .tc .tci.down,.pc .tci.down{transform:rotateY(180deg)}
@@ -1859,6 +1859,10 @@ function fitGrids(root=document){
 function fitBox(box){ if(!box) return; box.style.zoom=''; const H=box.clientHeight, S=box.scrollHeight; if(S>H+1&&H>0) box.style.zoom=Math.max(.55,H/S).toFixed(3); }
 function layoutFit(){ const v=$('#view'); if(!v) return; const pg=v.firstElementChild; if(pg) pg.style.zoom=''; fitGrids(v); if(pg) fitBox(pg); }
 addEventListener('resize',()=>{ layoutFit(); fitZoomStage(); });
+function relayoutSoon(){ [60,300,800].forEach(ms=>setTimeout(()=>{ layoutFit(); fitZoomStage(); if(G){ bLayout(); bRender(); } },ms)); }
+addEventListener('orientationchange',relayoutSoon);
+if(window.visualViewport) visualViewport.addEventListener('resize',relayoutSoon);
+addEventListener('pageshow',relayoutSoon);
 function render(){
   document.querySelectorAll('.nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===UI.tab));
   const r=SV.run;
@@ -2763,14 +2767,14 @@ function bLayout(){
   const wide=innerWidth>=900&&innerWidth>innerHeight*1.15, side=0;
   B.classList.toggle('wide',wide);
   const cs=getComputedStyle(B), H=B.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
-  HW=Math.round(Math.max(70,Math.min(wide?108:110,(Math.min(innerWidth,wide?1100:820)-32-side)/(wide?5.2:4.5))));
+  HW=Math.round(Math.max(70,Math.min(wide?Math.max(80,Math.min(104,(innerHeight-300)/4.2)):110,(Math.min(innerWidth,wide?1100:820)-32-side)/(wide?6.4:4.5))));
   const hand=HW*1.4+38, locH=104;
-  const fixed=48+hand+(wide?62:48+60)+(wide?24:40);
+  const fixed=48+hand+(wide?50:48+60)+(wide?24:40);
   const slotH=Math.max(60,(H-fixed-locH-18-30)/4), slotW=slotH/1.4;
   let boardW=(slotW+6)*6+16+30;
   boardW=Math.max(300,Math.min(boardW,innerWidth-32-side, wide?1000:860));
   bw.style.setProperty('--hw',HW+'px'); hz.style.setProperty('--hzh',Math.round(hand)+'px');
-  const brd=$('#board'), apply=()=>{ bw.style.maxWidth=Math.round(wide?Math.min(innerWidth-32,Math.max(boardW,820)):boardW)+'px'; if(brd){ brd.style.maxWidth=wide?Math.round(boardW)+'px':''; brd.style.width=wide?'100%':''; } };
+  const brd=$('#board'), apply=()=>{ bw.style.maxWidth=Math.round(wide?Math.min(innerWidth-32,Math.max(boardW,960)):boardW)+'px'; if(brd){ brd.style.maxWidth=wide?Math.round(boardW)+'px':''; brd.style.width=wide?'100%':''; } };
   apply();
   // measure (without the floating cards), then shrink the board until nothing spills below the screen
   const lay=$('#layer'); if(lay) lay.style.display='none';
