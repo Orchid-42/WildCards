@@ -904,7 +904,51 @@ const TR_PT={
 'Discovered this run':'Descobertos nesta expedição','In your run deck':'No seu deck da expedição','Release it to make your deck smaller and more consistent.':'Libere para deixar seu deck menor e mais consistente.','Release · 2':'Liberar · 2',
 'Your run deck needs at least 6 cards.':'Seu deck precisa de pelo menos 6 cartas.','{} released.':'{0} liberado.','Every animal is discovered.':'Todos os animais foram descobertos.','+20 XP on every discovered card.':'+20 XP em todas as cartas descobertas.',
 '{} get +{} here as natives. Each side holds {} cards.':'{0} ganham +{1} aqui como nativos. Cada lado comporta {2} cartas.',
-'Language':'Idioma'
+'Language':'Idioma',
+"Play on all your devices":"Jogue em todos os seus aparelhos",
+"Sign in to keep your progress online and pick it up on your iPhone, iPad or computer.":"Entre para guardar seu progresso online e continuar no iPhone, iPad ou computador.",
+"Sign in":"Entrar",
+"Sync now":"Sincronizar",
+"Account":"Conta",
+"Orchid-42 account":"Conta Orchid-42",
+"Create your account":"Crie sua conta",
+"Create account":"Criar conta",
+"Your progress saves online and syncs across your devices. One Orchid-42 account works for all our games.":"Seu progresso fica salvo online e sincroniza entre seus aparelhos. Uma conta Orchid-42 vale para todos os nossos jogos.",
+"Continue with Google":"Continuar com o Google",
+"or":"ou",
+"Email":"E-mail",
+"Password":"Senha",
+"Password (at least 6 characters)":"Senha (pelo menos 6 caracteres)",
+"I already have an account":"Já tenho uma conta",
+"New here? Create an account":"Primeira vez? Crie uma conta",
+"Forgot password?":"Esqueceu a senha?",
+"Signing out keeps your progress on this device. Sign in again any time to sync.":"Ao sair, seu progresso continua neste aparelho. Entre de novo quando quiser para sincronizar.",
+"Sign out":"Sair",
+"Choose a new password":"Escolha uma nova senha",
+"New password (at least 6 characters)":"Nova senha (pelo menos 6 caracteres)",
+"Save password":"Salvar senha",
+"Enter your email and password.":"Digite seu e-mail e senha.",
+"One moment…":"Só um instante…",
+"Almost there: we sent you an email. Tap the link in it to finish.":"Quase lá: enviamos um e-mail. Toque no link dele para concluir.",
+"You're signed in.":"Você entrou na sua conta.",
+"Email confirmed. You're signed in.":"E-mail confirmado. Você entrou na sua conta.",
+"Type your email above, then tap Forgot password again.":"Digite seu e-mail acima e toque em Esqueceu a senha de novo.",
+"Check your email for a link to reset your password.":"Confira seu e-mail: enviamos um link para redefinir a senha.",
+"Use a password with at least 6 characters.":"Use uma senha com pelo menos 6 caracteres.",
+"Password saved. You're signed in.":"Senha salva. Você entrou na sua conta.",
+"Signed out. Your progress stays on this device.":"Você saiu. Seu progresso continua neste aparelho.",
+"Can't reach the server. Check your connection.":"Não foi possível conectar. Verifique sua internet.",
+"Wrong email or password.":"E-mail ou senha incorretos.",
+"Confirm your email first. Check your inbox.":"Confirme seu e-mail primeiro. Veja sua caixa de entrada.",
+"That email already has an account. Sign in instead.":"Esse e-mail já tem conta. Entre com ele.",
+"Too many emails for now. Try again in an hour.":"Muitos e-mails por agora. Tente de novo em uma hora.",
+"Enter a valid email address.":"Digite um e-mail válido.",
+"Something went wrong.":"Algo deu errado.",
+"Offline. Progress will sync when you're back online.":"Sem internet. O progresso sincroniza quando você voltar a ficar online.",
+"Syncing…":"Sincronizando…",
+"Couldn't sync. Will try again.":"Não deu para sincronizar. Vamos tentar de novo.",
+"Synced across your devices.":"Sincronizado entre seus aparelhos.",
+"Signed in.":"Conectado."
 };
 const TRX=new Map(), TRP=[];
 if(PT){ for(const [k,v] of Object.entries(TR_PT)){ if(k.includes('{}')){ const lits=k.split('{}'); TRP.push({lits,out:v,lit:lits.join('').length,weak:!/[A-Za-z]/.test(lits.join(''))}); } TRX.set(k,v); }
@@ -1640,7 +1684,7 @@ function load(){
     for(const id in old.cards){ if(!DB[id]||DB[id].tier===0) continue; const o=old.cards[id]; f.cards[id]={...newCard(),xp:XPF[Math.min(5,o.f||0)]||0,bc:o.bc||'default'}; } } }catch(e){}
   return f;
 }
-function save(){ try{ localStorage.setItem(SKEY,JSON.stringify(SV)); }catch(e){} }
+function save(){ SV.mod=Date.now(); try{ localStorage.setItem(SKEY,JSON.stringify(SV)); }catch(e){} try{ cloudDirty(); }catch(e){} }
 const VARIANTS_ON_EARLY=false;
 let SV=load();
 for(const id in SV.cards){ if(SV.cards[id].v==='pop'||!VARIANTS_ON_EARLY) SV.cards[id].v='field'; }
@@ -1821,6 +1865,7 @@ function render(){
   $('#coinN').textContent=r?r.coins:'—'; $('#clN').textContent=Object.keys(SV.cards).length;
   $('#view').innerHTML = ({play:r?vCamp:vLobby,col:vCol,art:vArt})[UI.tab]();
   layoutFit();
+  if(SYNC.deferred&&!cloudBusy()){ SYNC.deferred=false; setTimeout(cloudSync,400); }
 }
 function vLobby(){
   const disc=Object.keys(SV.cards).filter(id=>DB[id].tier>0).length;
@@ -1829,6 +1874,7 @@ function vLobby(){
       <p class="lede">Cross three biomes. Win battles, shop between them, and build your deck as you go. Beat the final boss in about 15 minutes, then keep going for a high score.</p>
       <div class="row" style="margin-top:16px"><button class="btn amber" data-act="newrun">New run</button><button class="btn ghost" data-act="howto">How to play</button><button class="btn ghost" data-act="savecode">Save code</button></div></div>
     <div class="stats"><div><b>${SV.best.score.toLocaleString(NUMLOC)}</b>Best score</div><div><b>${SV.best.ante||'—'}</b>Best stage</div><div><b>${SV.runs}</b>Runs</div><div><b>${disc}/${SET.length}</b>Discovered</div></div>
+    ${acctCard()}
     <div class="card-s row between"><div><h3>Testing</h3><p class="small" style="margin:2px 0 0">Shortcuts for checking art and cosmetics.</p></div><div class="row"><button class="btn ghost sm" data-act="discoverall">Discover all</button><button class="btn ghost sm" data-act="xpall">+20 XP to all</button></div></div>
   </div>`;
 }
@@ -1864,6 +1910,177 @@ async function loadSaveCode(btn){
     const n=Object.keys(SAVE_PENDING.cards).length; msg.innerHTML=`Found ${n} animals and a best score of ${(SAVE_PENDING.best.score||0).toLocaleString(NUMLOC)}. <b>Tap again to replace this device's progress.</b>`; btn.textContent='Replace my progress'; btn.classList.add('amber'); return; }
   SV=SAVE_PENDING; SAVE_PENDING=null; save(); zclose(); UI.tab='play'; render(); toast('Progress loaded.');
 }
+/* =====================================================================
+   ACCOUNT + CLOUD SYNC — one Orchid-42 account (Supabase) for every game.
+   Progress merges across devices: every discovered animal, the higher XP, the best score.
+   ===================================================================== */
+const CLOUD={"url": "https://mjqhqchnstoboxbkaicv.supabase.co", "key": "sb_publishable_WJ3_9XN_5yqdSYVQ6nEiVA_ooijd773", "game": "wildcards"};
+const AKEY='orchid42.auth';
+const CLOUD_TOP=(()=>{ try{ return window.self===window.top; }catch(e){ return false; } })();   // the Claude preview runs in a frame and can't reach Supabase
+const cloudOn=()=>!!(CLOUD.url&&CLOUD.key&&CLOUD_TOP);
+const SITE=location.origin+location.pathname;
+let AUTH=(()=>{ try{ return JSON.parse(localStorage.getItem(AKEY))||null; }catch(e){ return null; } })();
+const SYNC={state:'idle',at:0,err:'',dirty:false,timer:0,busy:false,again:false,deferred:false};
+let AUTH_NOTE='', AUTH_RECOVERY=false;
+function authSave(a){ AUTH=a; try{ a?localStorage.setItem(AKEY,JSON.stringify(a)):localStorage.removeItem(AKEY); }catch(e){} }
+const userOf=u=>u?{id:u.id,email:u.email||(u.user_metadata&&u.user_metadata.email)||''}:null;
+function sessionFrom(j,user){ return {access_token:j.access_token,refresh_token:j.refresh_token,expires_at:+j.expires_at||Math.floor(Date.now()/1000)+(+j.expires_in||3600),user:userOf(j.user)||user||null}; }
+async function authFresh(){
+  if(!AUTH||AUTH.expires_at-60>Date.now()/1000) return;
+  if(authFresh.p) return authFresh.p;
+  authFresh.p=(async()=>{ try{
+      const r=await fetch(CLOUD.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:CLOUD.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:AUTH.refresh_token})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){ if(r.status>=400&&r.status<500) authSave(null); throw Object.assign(new Error(j.msg||j.error_description||'session'),{status:401}); }
+      authSave(sessionFrom(j,AUTH&&AUTH.user));
+    } finally{ authFresh.p=null; } })();
+  return authFresh.p;
+}
+async function sb(path,opt={},asUser=true){
+  const h={apikey:CLOUD.key,'Content-Type':'application/json',...(opt.headers||{})};
+  if(asUser){ await authFresh(); if(!AUTH) throw Object.assign(new Error('signed out'),{status:401}); h.Authorization='Bearer '+AUTH.access_token; }
+  const r=await fetch(CLOUD.url+path,{...opt,headers:h});
+  const txt=await r.text(); let j=null; try{ j=txt?JSON.parse(txt):null; }catch(e){}
+  if(!r.ok) throw Object.assign(new Error((j&&(j.msg||j.message||j.error_description||j.error))||('HTTP '+r.status)),{status:r.status,code:j&&(j.error_code||j.code)});
+  return j;
+}
+/* sign-in flows */
+async function authSignIn(email,pw){ const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password:pw})},false); authSave(sessionFrom(j)); }
+async function authSignUp(email,pw){ const j=await sb('/auth/v1/signup?redirect_to='+encodeURIComponent(SITE),{method:'POST',body:JSON.stringify({email,password:pw})},false);
+  if(j&&j.access_token){ authSave(sessionFrom(j)); return 'in'; } return 'confirm'; }
+function authGoogle(){ location.href=CLOUD.url+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(SITE); }
+async function authForgot(email){ await sb('/auth/v1/recover?redirect_to='+encodeURIComponent(SITE),{method:'POST',body:JSON.stringify({email})},false); }
+async function authSetPassword(pw){ await sb('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:pw})}); }
+async function authSignOut(){ try{ await sb('/auth/v1/logout',{method:'POST'}); }catch(e){} authSave(null); SYNC.state='idle'; SYNC.at=0; }
+/* links from emails and from Google come back with the session in the address (#access_token=…) */
+function authFromUrl(){
+  const h=location.hash; if(!h||h.length<3) return; const p=new URLSearchParams(h.slice(1));
+  if(p.get('error')||p.get('error_description')){ AUTH_NOTE=(p.get('error_description')||p.get('error')).replace(/\+/g,' '); history.replaceState(null,'',SITE); return; }
+  if(!p.get('access_token')) return;
+  authSave({access_token:p.get('access_token'),refresh_token:p.get('refresh_token'),expires_at:+p.get('expires_at')||Math.floor(Date.now()/1000)+(+p.get('expires_in')||3600),user:null});
+  const type=p.get('type'); if(type==='recovery') AUTH_RECOVERY=true; else AUTH_NOTE=type==='signup'?'Email confirmed. You\'re signed in.':'You\'re signed in.';
+  history.replaceState(null,'',SITE);
+}
+function authError(e){ const m=(e&&e.message||'').toLowerCase(), c=e&&e.code;
+  if(e instanceof TypeError||m.includes('failed to fetch')||m.includes('network')) return 'Can\'t reach the server. Check your connection.';
+  if(c==='invalid_credentials'||m.includes('invalid login')) return 'Wrong email or password.';
+  if(c==='email_not_confirmed'||m.includes('not confirmed')) return 'Confirm your email first. Check your inbox.';
+  if(c==='user_already_exists'||m.includes('already registered')) return 'That email already has an account. Sign in instead.';
+  if(c==='weak_password'||m.includes('password should')) return 'Use a password with at least 6 characters.';
+  if(c==='over_email_send_rate_limit'||m.includes('rate limit')) return 'Too many emails for now. Try again in an hour.';
+  if(m.includes('valid email')||c==='validation_failed') return 'Enter a valid email address.';
+  return e&&e.message||'Something went wrong.'; }
+/* ---- merging two saves of the same player ---- */
+const stableStr=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((r,x)=>(r[x]=v[x],r),{}):v);
+function mergeSaves(a,b){
+  const A=a.mod||0, B=b.mod||0, nw=A>=B?a:b, ol=A>=B?b:a, out=JSON.parse(JSON.stringify(nw)); out.cards=out.cards||{};
+  for(const id in (ol.cards||{})){ const o=ol.cards[id], m=out.cards[id];
+    if(!m){ out.cards[id]=JSON.parse(JSON.stringify(o)); continue; }
+    if((o.xp||0)>(m.xp||0)){ for(const k of ['f','fn','bc','v']) if(o[k]!=null) m[k]=o[k]; m.xp=o.xp; }   // the more-played copy keeps its look
+    m.plays=Math.max(m.plays||0,o.plays||0); m.wins=Math.max(m.wins||0,o.wins||0); }
+  out.best={score:Math.max(a.best?.score||0,b.best?.score||0),ante:Math.max(a.best?.ante||0,b.best?.ante||0)};
+  out.runs=Math.max(a.runs||0,b.runs||0); out.clears=Math.max(a.clears||0,b.clears||0); out.mod=Math.max(A,B);
+  return out;
+}
+function normSave(s){ for(const id in s.cards){ const c=s.cards[id]; if(!DB[id]){ delete s.cards[id]; continue; } c.v='field'; if(c.fn==='ht'||c.fn==='htbw') c.fn='none'; } return s; }
+function saveRaw(){ try{ localStorage.setItem(SKEY,JSON.stringify(SV)); }catch(e){} }
+const cloudBusy=()=>!!(G||PK);
+function cloudDirty(){ if(!cloudOn()||!AUTH) return; SYNC.dirty=true; clearTimeout(SYNC.timer); SYNC.timer=setTimeout(()=>cloudSync(),4000); }
+function syncText(){ return !navigator.onLine?'Offline. Progress will sync when you\'re back online.':SYNC.state==='syncing'?'Syncing…':SYNC.state==='error'?'Couldn\'t sync. Will try again.':SYNC.at?'Synced across your devices.':'Signed in.'; }
+function setSync(state,err){ SYNC.state=state; SYNC.err=err||''; const el=$('#syncline'); if(el) el.textContent=syncText(); }
+async function cloudSync(){
+  if(!cloudOn()||!AUTH) return;
+  if(SYNC.busy){ SYNC.again=true; return; }
+  if(cloudBusy()){ SYNC.deferred=true; return; }
+  clearTimeout(SYNC.timer); SYNC.busy=true; setSync('syncing');
+  try{
+    if(!AUTH.user||!AUTH.user.id){ const u=await sb('/auth/v1/user'); AUTH.user=userOf(u); authSave(AUTH); }
+    const uid=AUTH.user.id;
+    const rows=await sb(`/rest/v1/saves?select=data&game=eq.${CLOUD.game}&user_id=eq.${uid}`);
+    if(cloudBusy()){ SYNC.deferred=true; setSync('idle'); return; }
+    const remote=rows&&rows[0]?rows[0].data:null;
+    const merged=remote?normSave(mergeSaves(SV,remote)):SV;
+    const changedHere=stableStr(merged)!==stableStr(SV);
+    if(changedHere){ SV=merged; saveRaw(); }
+    if(!remote||stableStr(remote)!==stableStr(merged))
+      await sb('/rest/v1/saves?on_conflict=user_id,game',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:uid,game:CLOUD.game,data:merged})});
+    SYNC.dirty=false; SYNC.at=Date.now(); setSync('ok');
+    if(changedHere&&!cloudBusy()) render();
+  }catch(e){ if(e.status===401){ authSave(null); setSync('idle'); if(!cloudBusy()) render(); } else setSync('error',e.message); }
+  finally{ SYNC.busy=false; if(SYNC.again){ SYNC.again=false; setTimeout(cloudSync,500); } }
+}
+/* leaving the page: send what's unsent without waiting */
+function cloudFlush(){
+  if(!cloudOn()||!AUTH||!SYNC.dirty||!AUTH.user||AUTH.expires_at-30<Date.now()/1000) return;
+  try{ fetch(CLOUD.url+'/rest/v1/saves?on_conflict=user_id,game',{method:'POST',keepalive:true,headers:{apikey:CLOUD.key,Authorization:'Bearer '+AUTH.access_token,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:AUTH.user.id,game:CLOUD.game,data:SV})}); SYNC.dirty=false; }catch(e){}
+}
+async function cloudStart(){
+  if(!cloudOn()) return;
+  authFromUrl();
+  addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') cloudFlush(); else cloudSync(); });
+  addEventListener('pagehide',cloudFlush);
+  addEventListener('online',()=>{ setSync(SYNC.state); cloudSync(); });
+  addEventListener('offline',()=>setSync(SYNC.state));
+  if(AUTH_RECOVERY){ newPasswordSheet(); }
+  else if(AUTH_NOTE){ toast(esc(L(AUTH_NOTE))); }
+  if(AUTH){ await cloudSync(); render(); }
+}
+/* ---- screens ---- */
+function acctCard(){
+  if(!cloudOn()) return '';
+  if(!AUTH) return `<div class="card-s row between acct"><div><h3>Play on all your devices</h3><p class="small" style="margin:2px 0 0">Sign in to keep your progress online and pick it up on your iPhone, iPad or computer.</p></div><button class="btn amber sm" data-act="signin">Sign in</button></div>`;
+  return `<div class="card-s row between acct"><div style="min-width:0"><h3 class="aem">${esc(AUTH.user?.email||'Orchid-42 account')}</h3><p class="small" style="margin:2px 0 0" id="syncline">${syncText()}</p></div><div class="row"><button class="btn ghost sm" data-act="syncnow">Sync now</button><button class="btn ghost sm" data-act="acct">Account</button></div></div>`;
+}
+const AUTH_CSS_DONE=(()=>{ const st=document.createElement('style'); st.textContent=`
+.authf{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.authf input{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--bg2);border:1px solid transparent;border-radius:12px;padding:12px 14px;outline:none}
+.authf input:focus{border-color:var(--amber)}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:#fff;color:#1f1f1f;font-weight:600}
+.gbtn i{font-style:normal;font-weight:800;font-size:17px;line-height:1;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:#f1f1f1}
+.aor{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}.aor::before,.aor::after{content:"";flex:1;height:1px;background:var(--line,rgba(255,255,255,.1))}
+#amsg{min-height:1.2em;margin:0}#amsg.err{color:var(--coral)}#amsg.ok{color:var(--mint)}
+.acct .aem{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lnk2{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;align-self:center;padding:4px}`; document.head.appendChild(st); return true; })();
+function signInSheet(mode){
+  const up=mode==='up';
+  showSheet(`<div class="card-s"><h2>${up?'Create your account':'Sign in'}</h2><p class="small" style="margin:6px 0 0">Your progress saves online and syncs across your devices. One Orchid-42 account works for all our games.</p>
+    <div class="authf"><button class="btn gbtn" data-act="agoogle"><i>G</i>Continue with Google</button><div class="aor">or</div>
+      <input id="aemail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="Email">
+      <input id="apw" type="password" autocomplete="${up?'new-password':'current-password'}" placeholder="${up?'Password (at least 6 characters)':'Password'}">
+      <p class="small" id="amsg"></p>
+      <button class="btn amber" data-act="${up?'asignup':'alogin'}">${up?'Create account':'Sign in'}</button>
+      ${up?'<button class="lnk2" data-act="signin">I already have an account</button>':'<button class="lnk2" data-act="signup">New here? Create an account</button><button class="lnk2" data-act="aforgot">Forgot password?</button>'}</div></div>
+    <button class="btn ghost" data-act="zclose">Close</button>`);
+}
+function acctSheet(){
+  showSheet(`<div class="card-s"><div class="kicker">Orchid-42 account</div><h2 style="margin-top:4px;overflow-wrap:anywhere">${esc(AUTH?.user?.email||'')}</h2><p class="small" style="margin:6px 0 0" id="syncline">${syncText()}</p>
+    <p class="small" style="margin:10px 0 0">Signing out keeps your progress on this device. Sign in again any time to sync.</p>
+    <div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" data-act="asignout">Sign out</button></div></div>
+    <button class="btn ghost" data-act="zclose">Close</button>`);
+}
+function newPasswordSheet(){
+  showSheet(`<div class="card-s"><h2>Choose a new password</h2><div class="authf"><input id="apw" type="password" autocomplete="new-password" placeholder="New password (at least 6 characters)"><p class="small" id="amsg"></p><button class="btn amber" data-act="asetpw">Save password</button></div></div>`);
+}
+function amsg(t,kind){ const m=$('#amsg'); if(m){ m.textContent=L(t); m.className='small '+(kind||''); } }
+async function authAct(act,btn){
+  const email=($('#aemail')?.value||'').trim(), pw=$('#apw')?.value||'';
+  const busy=on=>{ if(btn){ btn.disabled=on; } };
+  try{
+    if(act==='agoogle'){ authGoogle(); return; }
+    if(act==='alogin'||act==='asignup'){
+      if(!email||!pw){ amsg('Enter your email and password.','err'); return; }
+      busy(true); amsg('One moment…');
+      if(act==='alogin') await authSignIn(email,pw);
+      else if(await authSignUp(email,pw)==='confirm'){ amsg('Almost there: we sent you an email. Tap the link in it to finish.','ok'); busy(false); return; }
+      zclose(); toast(L('You\'re signed in.')); await cloudSync(); render(); return;
+    }
+    if(act==='aforgot'){ if(!email){ amsg('Type your email above, then tap Forgot password again.','err'); return; } busy(true); await authForgot(email); amsg('Check your email for a link to reset your password.','ok'); busy(false); return; }
+    if(act==='asetpw'){ if(pw.length<6){ amsg('Use a password with at least 6 characters.','err'); return; } busy(true); await authSetPassword(pw); zclose(); toast(L('Password saved. You\'re signed in.')); await cloudSync(); render(); return; }
+    if(act==='asignout'){ await authSignOut(); zclose(); render(); toast(L('Signed out. Your progress stays on this device.')); return; }
+  }catch(e){ busy(false); amsg(authError(e),'err'); }
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.matches&&e.target.matches('.authf input')){ e.preventDefault(); const b=document.querySelector('.authf .btn.amber'); if(b) b.click(); } });
 function howTo(){ showSheet(`<div class="card-s"><h2>How a run works</h2><ol class="how">
       <li><b>Three stages, three battles each.</b> Two battles, then a boss with a twist. Each stage is a different biome.</li>
       <li><b>Order matters.</b> Cards reveal one by one in the order you play them. Whoever is winning has priority and reveals first; turn 1 is a coin toss.</li>
@@ -2813,6 +3030,11 @@ document.addEventListener('click',e=>{
     case 'ctab': UI.camp=t.dataset.k; render(); break;
     case 'howto': howTo(); break;
     case 'lang': setLang(PT?'en':'pt'); break;
+    case 'signin': signInSheet('in'); break;
+    case 'signup': signInSheet('up'); break;
+    case 'acct': acctSheet(); break;
+    case 'syncnow': cloudSync(); break;
+    case 'agoogle': case 'alogin': case 'asignup': case 'aforgot': case 'asetpw': case 'asignout': authAct(t.dataset.act,t); break;
     case 'savecode': SAVE_PENDING=null; saveCodeSheet(); break;
     case 'scopy': { const ta=$('#scode'); navigator.clipboard?.writeText(ta.value).then(()=>toast('Code copied.'),()=>{ ta.select(); toast('Select the code and copy it.'); }) ?? (ta.select(),toast('Select the code and copy it.')); break; }
     case 'sshare': navigator.share?.({title:'WildCards save',text:$('#scode').value}).catch(()=>{}); break;
@@ -2860,6 +3082,7 @@ document.addEventListener('change',e=>{ const t=e.target; if(t.dataset.up) onUpl
 addEventListener('resize',()=>{ if(G){ bLayout(); bRender(); } });
 render();
 initCaps();
+cloudStart();
 
 </script>
 
