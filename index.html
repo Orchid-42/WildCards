@@ -1964,7 +1964,7 @@ async function mountGoogle(){
   const raw=b64url(crypto.getRandomValues(new Uint8Array(24)));
   const hashed=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))].map(x=>x.toString(16).padStart(2,'0')).join('');
   google.accounts.id.initialize({client_id:CLOUD.google,nonce:hashed,ux_mode:'popup',auto_select:false,itp_support:true,callback:res=>googleCredential(res.credential,raw)});
-  const el=$('#gbox'); el.innerHTML=''; google.accounts.id.renderButton(el,{type:'standard',theme:'filled_black',size:'large',text:'continue_with',shape:'pill',logo_alignment:'center',width:Math.max(200,Math.min(400,el.clientWidth||300)),locale:PT?'pt-BR':'en'});
+  const el=$('#gbox'); el.innerHTML=''; google.accounts.id.renderButton(el,{type:'standard',theme:'filled_black',size:'large',text:'continue_with',shape:'pill',logo_alignment:'center',width:Math.round(Math.max(200,Math.min(400,($('#aemail')&&$('#aemail').offsetWidth)||el.clientWidth||300))),locale:PT?'pt-BR':'en'});
 }
 async function googleCredential(token,raw){
   try{ amsg('One moment…');
@@ -2072,7 +2072,8 @@ const AUTH_CSS_DONE=(()=>{ const st=document.createElement('style'); st.textCont
 .pill.acctb.in.err::after{background:var(--coral)}
 .pill.acctb:not(.in){background:var(--amber);color:#1a1205}
 @media (max-width:420px){.pill.acctb:not(.in) #acctl{display:none}.pill.acctb{padding:6px 8px}}
-.gbox{min-height:44px;display:flex;justify-content:center;align-items:center}.gbox>.gbtn{flex:1}
+.gbox{min-height:44px;display:flex;justify-content:center;align-items:center;color-scheme:light;background:transparent;overflow:hidden;border-radius:999px}
+.gbox iframe{color-scheme:light;background:transparent!important}.gbox>.gbtn{flex:1}
 .lnk2{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;align-self:center;padding:4px}`; document.head.appendChild(st); return true; })();
 function signInSheet(mode){
   const up=mode==='up';
