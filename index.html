@@ -614,7 +614,7 @@ html[lang="en"] .pill.lang b[data-l="en"],html[lang="pt-BR"] .pill.lang b[data-l
 <div id="app">
   <header class="top">
     <div class="mark"><i><svg viewBox="0 0 84 84" aria-hidden="true"><path d="M24 12h36a6 6 0 0 1 6 6v48a6 6 0 0 1-6 6H24a6 6 0 0 1-6-6V18a6 6 0 0 1 6-6z"/><circle cx="42" cy="50" r="8"/><circle cx="31" cy="36" r="3.5"/><circle cx="39" cy="31" r="3.5"/><circle cx="47" cy="31" r="3.5"/><circle cx="55" cy="36" r="3.5"/></svg></i>WildCards</div>
-    <div class="wallet"><button class="pill lang" data-act="lang" title="Language" aria-label="Language"><b data-l="en">EN</b><b data-l="pt">PT</b></button><div class="pill" title="Discovered animals"><span class="clv"></span><span id="clN">0</span></div><div class="pill" title="Run coins"><span class="coin"></span><span id="coinN">0</span></div></div>
+    <div class="wallet"><button class="pill acctb" data-act="acctbtn" id="acctb" hidden aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span id="acctl">Sign in</span></button><button class="pill lang" data-act="lang" title="Language" aria-label="Language"><b data-l="en">EN</b><b data-l="pt">PT</b></button><div class="pill" title="Discovered animals"><span class="clv"></span><span id="clN">0</span></div><div class="pill" title="Run coins"><span class="coin"></span><span id="coinN">0</span></div></div>
   </header>
   <main id="view"></main>
   <nav class="nav" id="nav">
@@ -1866,6 +1866,7 @@ function render(){
   $('#view').innerHTML = ({play:r?vCamp:vLobby,col:vCol,art:vArt})[UI.tab]();
   layoutFit();
   if(SYNC.deferred&&!cloudBusy()){ SYNC.deferred=false; setTimeout(cloudSync,400); }
+  acctBtn();
 }
 function vLobby(){
   const disc=Object.keys(SV.cards).filter(id=>DB[id].tier>0).length;
@@ -1987,7 +1988,7 @@ function saveRaw(){ try{ localStorage.setItem(SKEY,JSON.stringify(SV)); }catch(e
 const cloudBusy=()=>!!(G||PK);
 function cloudDirty(){ if(!cloudOn()||!AUTH) return; SYNC.dirty=true; clearTimeout(SYNC.timer); SYNC.timer=setTimeout(()=>cloudSync(),4000); }
 function syncText(){ return !navigator.onLine?'Offline. Progress will sync when you\'re back online.':SYNC.state==='syncing'?'Syncing…':SYNC.state==='error'?'Couldn\'t sync. Will try again.':SYNC.at?'Synced across your devices.':'Signed in.'; }
-function setSync(state,err){ SYNC.state=state; SYNC.err=err||''; const el=$('#syncline'); if(el) el.textContent=syncText(); }
+function setSync(state,err){ SYNC.state=state; SYNC.err=err||''; const el=$('#syncline'); if(el) el.textContent=L(syncText()); acctBtn(); }
 async function cloudSync(){
   if(!cloudOn()||!AUTH) return;
   if(SYNC.busy){ SYNC.again=true; return; }
@@ -2026,6 +2027,7 @@ async function cloudStart(){
   if(AUTH){ await cloudSync(); render(); }
 }
 /* ---- screens ---- */
+function acctBtn(){ const b=$('#acctb'); if(!b) return; b.hidden=!cloudOn(); if(!cloudOn()) return; b.classList.toggle('in',!!AUTH); b.classList.toggle('err',SYNC.state==='error'); const l=$('#acctl'); if(l) l.textContent=AUTH?'':L('Sign in'); b.title=AUTH?(AUTH.user?.email||''):L('Sign in'); }
 function acctCard(){
   if(!cloudOn()) return '';
   if(!AUTH) return `<div class="card-s row between acct"><div><h3>Play on all your devices</h3><p class="small" style="margin:2px 0 0">Sign in to keep your progress online and pick it up on your iPhone, iPad or computer.</p></div><button class="btn amber sm" data-act="signin">Sign in</button></div>`;
@@ -2040,6 +2042,13 @@ const AUTH_CSS_DONE=(()=>{ const st=document.createElement('style'); st.textCont
 .aor{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}.aor::before,.aor::after{content:"";flex:1;height:1px;background:var(--line,rgba(255,255,255,.1))}
 #amsg{min-height:1.2em;margin:0}#amsg.err{color:var(--coral)}#amsg.ok{color:var(--mint)}
 .acct .aem{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill.acctb{border:0;font:inherit;color:inherit;cursor:pointer;gap:6px;padding:6px 11px 6px 9px;position:relative}
+.pill.acctb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.pill.acctb.in{padding:6px 8px}.pill.acctb.in #acctl{display:none}
+.pill.acctb.in::after{content:"";position:absolute;right:4px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 2px var(--surf)}
+.pill.acctb.in.err::after{background:var(--coral)}
+.pill.acctb:not(.in){background:var(--amber);color:#1a1205}
+@media (max-width:420px){.pill.acctb:not(.in) #acctl{display:none}.pill.acctb{padding:6px 8px}}
 .lnk2{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;align-self:center;padding:4px}`; document.head.appendChild(st); return true; })();
 function signInSheet(mode){
   const up=mode==='up';
@@ -3030,6 +3039,7 @@ document.addEventListener('click',e=>{
     case 'ctab': UI.camp=t.dataset.k; render(); break;
     case 'howto': howTo(); break;
     case 'lang': setLang(PT?'en':'pt'); break;
+    case 'acctbtn': if(AUTH) acctSheet(); else signInSheet('in'); break;
     case 'signin': signInSheet('in'); break;
     case 'signup': signInSheet('up'); break;
     case 'acct': acctSheet(); break;
