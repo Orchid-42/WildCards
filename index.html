@@ -1915,7 +1915,7 @@ async function loadSaveCode(btn){
    ACCOUNT + CLOUD SYNC — one Orchid-42 account (Supabase) for every game.
    Progress merges across devices: every discovered animal, the higher XP, the best score.
    ===================================================================== */
-const CLOUD={"url": "https://mjqhqchnstoboxbkaicv.supabase.co", "key": "sb_publishable_WJ3_9XN_5yqdSYVQ6nEiVA_ooijd773", "game": "wildcards"};
+const CLOUD={"url": "https://mjqhqchnstoboxbkaicv.supabase.co", "key": "sb_publishable_WJ3_9XN_5yqdSYVQ6nEiVA_ooijd773", "google": "973222019085-na3po9bgpuvfv3hn40q2gjplgvd9ufbm.apps.googleusercontent.com", "game": "wildcards"};
 const AKEY='orchid42.auth';
 const CLOUD_TOP=(()=>{ try{ return window.self===window.top; }catch(e){ return false; } })();   // the Claude preview runs in a frame and can't reach Supabase
 const cloudOn=()=>!!(CLOUD.url&&CLOUD.key&&CLOUD_TOP);
@@ -1949,6 +1949,29 @@ async function sb(path,opt={},asUser=true){
 async function authSignIn(email,pw){ const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password:pw})},false); authSave(sessionFrom(j)); }
 async function authSignUp(email,pw){ const j=await sb('/auth/v1/signup?redirect_to='+encodeURIComponent(SITE),{method:'POST',body:JSON.stringify({email,password:pw})},false);
   if(j&&j.access_token){ authSave(sessionFrom(j)); return 'in'; } return 'confirm'; }
+/* Google's own button (popup from this page): Google shows the game's address, then Supabase checks the token */
+let GIS_P=null;
+function loadGis(){ if(window.google&&google.accounts&&google.accounts.id) return Promise.resolve(); if(GIS_P) return GIS_P;
+  GIS_P=new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.async=true; s.onload=()=>res(); s.onerror=()=>{ GIS_P=null; rej(new Error('gis')); }; document.head.appendChild(s); setTimeout(()=>rej(new Error('gis timeout')),9000); });
+  return GIS_P; }
+const b64url=u8=>btoa(String.fromCharCode(...u8)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+function googleFallback(box){ box.innerHTML='<button class="btn gbtn" data-act="agoogle"><i>G</i>'+L('Continue with Google')+'</button>'; }
+async function mountGoogle(){
+  const box=$('#gbox'); if(!box) return;
+  if(!CLOUD.google||!window.crypto||!crypto.subtle){ googleFallback(box); return; }
+  try{ await loadGis(); }catch(e){ if($('#gbox')) googleFallback($('#gbox')); return; }
+  if(!$('#gbox')) return;
+  const raw=b64url(crypto.getRandomValues(new Uint8Array(24)));
+  const hashed=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+  google.accounts.id.initialize({client_id:CLOUD.google,nonce:hashed,ux_mode:'popup',auto_select:false,itp_support:true,callback:res=>googleCredential(res.credential,raw)});
+  const el=$('#gbox'); el.innerHTML=''; google.accounts.id.renderButton(el,{type:'standard',theme:'filled_black',size:'large',text:'continue_with',shape:'pill',logo_alignment:'center',width:Math.max(200,Math.min(400,el.clientWidth||300)),locale:PT?'pt-BR':'en'});
+}
+async function googleCredential(token,raw){
+  try{ amsg('One moment…');
+    const j=await sb('/auth/v1/token?grant_type=id_token',{method:'POST',body:JSON.stringify({provider:'google',id_token:token,nonce:raw})},false);
+    authSave(sessionFrom(j)); zclose(); toast(L("You're signed in.")); await cloudSync(); render();
+  }catch(e){ amsg(authError(e),'err'); }
+}
 function authGoogle(){ location.href=CLOUD.url+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(SITE); }
 async function authForgot(email){ await sb('/auth/v1/recover?redirect_to='+encodeURIComponent(SITE),{method:'POST',body:JSON.stringify({email})},false); }
 async function authSetPassword(pw){ await sb('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:pw})}); }
@@ -2049,17 +2072,19 @@ const AUTH_CSS_DONE=(()=>{ const st=document.createElement('style'); st.textCont
 .pill.acctb.in.err::after{background:var(--coral)}
 .pill.acctb:not(.in){background:var(--amber);color:#1a1205}
 @media (max-width:420px){.pill.acctb:not(.in) #acctl{display:none}.pill.acctb{padding:6px 8px}}
+.gbox{min-height:44px;display:flex;justify-content:center;align-items:center}.gbox>.gbtn{flex:1}
 .lnk2{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;align-self:center;padding:4px}`; document.head.appendChild(st); return true; })();
 function signInSheet(mode){
   const up=mode==='up';
   showSheet(`<div class="card-s"><h2>${up?'Create your account':'Sign in'}</h2><p class="small" style="margin:6px 0 0">Your progress saves online and syncs across your devices. One Orchid-42 account works for all our games.</p>
-    <div class="authf"><button class="btn gbtn" data-act="agoogle"><i>G</i>Continue with Google</button><div class="aor">or</div>
+    <div class="authf"><div id="gbox" class="gbox"></div><div class="aor">or</div>
       <input id="aemail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="Email">
       <input id="apw" type="password" autocomplete="${up?'new-password':'current-password'}" placeholder="${up?'Password (at least 6 characters)':'Password'}">
       <p class="small" id="amsg"></p>
       <button class="btn amber" data-act="${up?'asignup':'alogin'}">${up?'Create account':'Sign in'}</button>
       ${up?'<button class="lnk2" data-act="signin">I already have an account</button>':'<button class="lnk2" data-act="signup">New here? Create an account</button><button class="lnk2" data-act="aforgot">Forgot password?</button>'}</div></div>
     <button class="btn ghost" data-act="zclose">Close</button>`);
+  mountGoogle();
 }
 function acctSheet(){
   showSheet(`<div class="card-s"><div class="kicker">Orchid-42 account</div><h2 style="margin-top:4px;overflow-wrap:anywhere">${esc(AUTH?.user?.email||'')}</h2><p class="small" style="margin:6px 0 0" id="syncline">${syncText()}</p>
