@@ -536,6 +536,20 @@ to{background-position:100% 100%,0 0}}
 .lvl{position:absolute;z-index:8;left:-4px;bottom:-6px;font-weight:700;font-size:10px;padding:3px 7px;border-radius:999px;background:var(--surf3);color:var(--text);box-shadow:0 4px 10px rgba(0,0,0,.35)}
 .ups{margin-top:12px;display:flex;flex-direction:column;gap:6px;text-align:left;font-size:13px;color:var(--muted);background:var(--bg2);border-radius:12px;padding:10px 12px}
 .ups b{color:var(--amber2);font-weight:600}
+.result.peek{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s,visibility 0s .25s}
+.result{transition:opacity .25s}
+.prog{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 10px;margin-top:14px}
+.pg{width:64px;display:flex;flex-direction:column;gap:5px;opacity:.55;transition:opacity .3s;position:relative}
+.pg.on{opacity:1}
+.pgc{width:64px;position:relative}
+.pgb{height:5px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+.pgb i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2));border-radius:3px;transition:width .65s var(--ease)}
+.pgl{display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono);color:var(--muted);line-height:1}
+.pgl em{font-style:normal;color:var(--amber2)}
+.pg.lvup .pgc{animation:lvup 1s var(--ease)}
+.pg.lvup::before{content:attr(data-up);position:absolute;left:50%;top:-8px;transform:translateX(-50%);z-index:3;white-space:nowrap;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:var(--amber);color:#1a1205;padding:2px 6px;border-radius:999px;animation:upbadge 1.2s var(--ease) both}
+@keyframes lvup{0%{transform:scale(1)}25%{transform:scale(1.22) rotate(-3deg);filter:brightness(1.8) drop-shadow(0 0 14px rgba(255,201,74,.9))}55%{transform:scale(.96) rotate(1deg)}100%{transform:scale(1);filter:none}}
+@keyframes upbadge{0%{opacity:0;transform:translate(-50%,6px) scale(.6)}30%{opacity:1;transform:translate(-50%,-4px) scale(1.1)}100%{opacity:1;transform:translate(-50%,0) scale(1)}}
 .trk{margin-top:10px}
 .trk summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--muted)}
 .tks{display:flex;flex-direction:column;gap:4px;margin-top:8px}
@@ -905,6 +919,9 @@ const TR_PT={
 'Your run deck needs at least 6 cards.':'Seu deck precisa de pelo menos 6 cartas.','{} released.':'{0} liberado.','Every animal is discovered.':'Todos os animais foram descobertos.','+20 XP on every discovered card.':'+20 XP em todas as cartas descobertas.',
 '{} get +{} here as natives. Each side holds {} cards.':'{0} ganham +{1} aqui como nativos. Cada lado comporta {2} cartas.',
 'Language':'Idioma',
+"See board":"Ver tabuleiro",
+"Results":"Resultados",
+"Level up!":"Subiu de nível!",
 "Play on all your devices":"Jogue em todos os seus aparelhos",
 "Sign in to keep your progress online and pick it up on your iPhone, iPad or computer.":"Entre para guardar seu progresso online e continuar no iPhone, iPad ou computador.",
 "Sign in":"Entrar",
@@ -1690,12 +1707,17 @@ let SV=load();
 for(const id in SV.cards){ if(SV.cards[id].v==='pop'||!VARIANTS_ON_EARLY) SV.cards[id].v='field'; }
 for(const id in SV.cards){ const c=SV.cards[id]; if(c.fn==='ht'||c.fn==='htbw') c.fn='none'; }
 const known = id => !!SV.cards[id];
+setTimeout(()=>{ if(SV.autoLook) return; for(const id in SV.cards){ const c=SV.cards[id]; if((c.f||0)===0&&(c.fn||'none')==='none'){ const lv=levelOf(c); for(let l=2;l<=lv;l++) autoUpgrade(c,l); } } SV.autoLook=1; save(); if(!G) render(); },0);
 const levelOf = c => { let l=1; for(let i=1;i<LV.length;i++) if(c.xp>=LV[i]) l=i+1; return l; };
 function unlocked(c){ const lv=levelOf(c), u={b:0,fn:new Set(['none']),v:new Set(['field']),c:false};
   for(let l=2;l<=lv;l++) for(const [k,x] of (UNLOCKS[l]||[])){ if(k==='soon') continue; if(k==='b') u.b=Math.max(u.b,x); else if(k==='c') u.c=true; else u[k].add(x); }
   return u; }
 function unlockText(l){ return (UNLOCKS[l]||[]).map(([k,x])=>k==='soon'?L('picture variants (coming soon)'):k==='b'?L('{} border',FINS[x].n):k==='c'?L('border colours'):k==='fn'?L('{} finish',FINISHES.find(f=>f.k===x).n):L('{} art',VARS.find(v=>v.k===x).n)).join(', '); }
 function clampLook(c){ const u=unlocked(c); if(c.f>u.b) c.f=u.b; if(!u.fn.has(c.fn)) c.fn='none'; if(!u.v.has(c.v)) c.v='field'; if(!u.c) c.bc='default'; }
+const AUTO_FIN=['foil','prism','gold'];
+function autoUpgrade(c,l){ for(const [k,x] of (UNLOCKS[l]||[])){
+  if(k==='b'&&x>(c.f||0)) c.f=x;
+  if(k==='fn'&&AUTO_FIN.includes(x)){ const cur=AUTO_FIN.indexOf(c.fn); if(c.fn==='none'||c.fn==null||(cur>=0&&cur<AUTO_FIN.indexOf(x))) c.fn=x; } } }
 function gainXP(id,n){ const c=SV.cards[id]; if(!c) return null; const before=levelOf(c); c.xp+=n; const after=levelOf(c); return after>before?after:null; }
 
 /* =====================================================================
@@ -2813,8 +2835,8 @@ function bRender(){
   const bp=$('#bprio'); if(bp){ bp.textContent=G.prio==='p'?L('You reveal first'):L('Rival reveals first'); bp.classList.toggle('mine',G.prio==='p'); }
   const orb=$('#borb'); if(orb.textContent!=String(energy)){ orb.textContent=energy; orb.classList.remove('pop'); void orb.offsetWidth; orb.classList.add('pop'); }
   $('#bdecks').innerHTML=L('Your deck {}',G.pDeck.length)+'<br>'+L('Rival hand {} · deck {}',G.oHand.length,G.oDeck.length);
-  const end=$('#bend'); end.disabled=G.busy||G.over; end.textContent=G.busy?L('Revealing…'):G.turn===6?L('Final reveal'):L('End turn');
-  $('#brtr').textContent=G.armed?L('Tap again'):L('Retreat'); $('#brtr').classList.toggle('armed',G.armed);
+  const end=$('#bend'); if(G.over){ end.disabled=!G.result; end.dataset.act='backres'; end.textContent=L('Results'); } else { end.dataset.act='end'; end.disabled=G.busy; end.textContent=G.busy?L('Revealing…'):G.turn===6?L('Final reveal'):L('End turn'); }
+  $('#brtr').textContent=G.armed?L('Tap again'):L('Retreat'); $('#brtr').classList.toggle('armed',G.armed); $('#brtr').style.visibility=G.over?'hidden':'';
   $('#binfo').innerHTML='<span>'+G.msg+'</span>';
   G.lanes.forEach((L,li)=>{ const po=total(G,li,'p'), oo=total(G,li,'o');
     const hid=G.fog&&!G.over; for(const [id,v0,lead0] of [['sco'+li,oo,oo>po],['scp'+li,po,po>oo]]){ const v=hid&&id[2]==='o'?'?':v0, lead=hid?false:lead0; const e=$('#'+id); if(e.textContent!=String(v)){ e.textContent=v; e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); } e.classList.toggle('lead',lead); } });
@@ -3013,9 +3035,11 @@ function finish(forfeit){
   else coins=1;
   r.coins+=coins+interest; r.score+=score.total;
   // card experience (persists across runs)
-  const ups=[];
-  for(const id of G.played){ const c=SV.cards[id]; if(!c) continue; c.plays=(c.plays||0)+1; if(out==='win') c.wins=(c.wins||0)+1;
-    const l=gainXP(id,1+(out==='win'?1:0)+(cfg.boss?1:0)); if(l) ups.push([id,l]); }
+  const ups=[], prog=[], look=c=>({xp:c.xp,lv:levelOf(c),f:c.f||0,fn:c.fn||'none',bc:c.bc||'default',v:c.v||'field'});
+  for(const id of G.played){ const c=SV.cards[id]; if(!c) continue; const b=look(c); c.plays=(c.plays||0)+1; if(out==='win') c.wins=(c.wins||0)+1;
+    const l=gainXP(id,1+(out==='win'?1:0)+(cfg.boss?1:0)); if(l){ ups.push([id,l]); for(let k=b.lv+1;k<=l;k++) autoUpgrade(c,k); }
+    prog.push({id,b,a:look(c),l}); }
+  prog.sort((x,y)=>(y.l?1:0)-(x.l?1:0));
   let next='';
   if(out==='loss'){ r.lives-=1; }
   if(r.lives<=0) next='over';
@@ -3030,11 +3054,31 @@ function finish(forfeit){
     <div class="lres">${res.map(x=>`<div class="${x.p>x.o?'w':''}">${LOCS[x.loc].n}<b>${x.p}–${x.o}</b></div>`).join('')}</div>
     ${out==='win'?`<table class="brk" style="margin-top:12px">${score.parts.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('')}<tr class="tot"><td>Score</td><td>+${score.total.toLocaleString(NUMLOC)}</td></tr></table>`:''}
     <p style="margin:12px 0 0;font-weight:600">+${coins} coins${interest?` · +${interest} interest`:''}</p>
-    ${ups.length?`<div class="ups">${ups.map(([id,l])=>`<div><b>${esc(DB[id].name)}</b> reached level ${l}: ${unlockText(l)}</div>`).join('')}</div>`:''}
-    <div class="row" style="justify-content:center;margin-top:16px"><button class="btn amber" data-act="leave">${next==='over'?'See results':'Continue'}</button></div></div>`;
-  $('#battle').appendChild(div);
-  { const cs=div.querySelector('.card-s'), H=innerHeight-40; if(cs.scrollHeight>H) cs.style.zoom=Math.max(.55,H/cs.scrollHeight).toFixed(3); }
+    ${prog.length?`<div class="prog">${prog.map((p,i)=>`<div class="pg" data-i="${i}" data-up="${esc(L('Level up!'))}"><div class="pgc">${cardHTML(p.id,p.b)}</div><div class="pgb"><i style="width:${xpPct(p.b)}%"></i></div><div class="pgl"><span>${L('Lv {}',p.b.lv)}</span><em>+${p.a.xp-p.b.xp} XP</em></div></div>`).join('')}</div>`:''}
+    <div class="ups" id="pgups" hidden></div>
+    <div class="row" style="justify-content:center;margin-top:16px"><button class="btn ghost" data-act="peekboard">${L('See board')}</button><button class="btn amber" data-act="leave">${next==='over'?'See results':'Continue'}</button></div></div>`;
+  $('#battle').appendChild(div); G.result=div;
+  playProgress(div,prog);
+  fitResult(div);
 }
+/* ---- card progress after a battle: bars fill, level-ups flip to their new look ---- */
+const xpPct=s=>LV[s.lv]?Math.max(0,Math.min(100,(s.xp-LV[s.lv-1])/(LV[s.lv]-LV[s.lv-1])*100)):100;
+async function playProgress(div,prog){
+  await sleep(650);
+  for(let i=0;i<prog.length;i++){ const p=prog[i], el=div.querySelector(`.pg[data-i="${i}"]`); if(!el||!div.isConnected) return;
+    const bar=el.querySelector('.pgb i'); el.classList.add('on');
+    if(p.l){
+      bar.style.width='100%'; await sleep(700);
+      el.classList.add('lvup'); bar.style.transition='none'; bar.style.width='0%'; void bar.offsetWidth; bar.style.transition='';
+      await sleep(180);
+      el.querySelector('.pgc').innerHTML=cardHTML(p.id,p.a); el.querySelector('.pgl span').textContent=L('Lv {}',p.a.lv);
+      const ups=div.querySelector('#pgups'); if(ups){ ups.hidden=false; const d=document.createElement('div'); d.innerHTML=`<b>${esc(DB[p.id].name)}</b> ${L('reached level {}: {}',p.l,unlockText(p.l))}`; ups.appendChild(d); }
+      fitResult(div);
+      await sleep(120); bar.style.width=xpPct(p.a)+'%'; await sleep(900);
+    } else { bar.style.width=xpPct(p.a)+'%'; await sleep(prog.length>6?140:240); }
+  }
+}
+function fitResult(div){ const cs=div.querySelector('.card-s'); if(!cs) return; cs.style.zoom=''; const H=innerHeight-40; if(cs.scrollHeight>H) cs.style.zoom=Math.max(.55,H/cs.scrollHeight).toFixed(3); }
 function leave(){
   $('#battle').hidden=true; $('#battle').innerHTML=''; CEL.clear(); document.body.style.overflow=''; G=null;
   const r=SV.run; if(!r){ render(); return; }
@@ -3115,6 +3159,8 @@ document.addEventListener('click',e=>{
     case 'end': endTurn(); break;
     case 'retreat': if(!G||G.over||G.busy) break; if(G.armed){ G.armed=false; finish(true); } else { G.armed=true; bRender(); setTimeout(()=>{ if(G&&G.armed){ G.armed=false; bRender(); } },3000); } break;
     case 'leave': leave(); break;
+    case 'peekboard': if(G&&G.result){ G.result.classList.add('peek'); G.peek=true; bRender(); } break;
+    case 'backres': if(G&&G.result){ G.result.classList.remove('peek'); G.peek=false; bRender(); } break;
     case 'loc': { const L=LOCS[G.lanes[+t.dataset.l].loc]; showSheet(`<div class="card-s"><div class="kicker">${PT?'Habitat '+PT_BIO_IN[L.b]:BIO[L.b].n+' habitat'}</div><h2 style="margin-top:4px">${L.n}</h2><p style="margin:8px 0 0">${L.t}</p><p class="small">${PT?'Animais '+PT_BIO_IN[L.b]:BIO[L.b].n+' animals'} get +${G.gear.includes('fieldguide')?3:2} here as natives. Each side holds ${Math.min(L.slots||4,G.narrow?3:4)} cards.</p></div><button class="btn ghost" data-act="zclose">Close</button>`); break; }
   }
 });
